@@ -38,6 +38,10 @@ func (a *App) initModules() {
 	a.FirebaseModule = firebaseModule.NewModule()
 }
 
+func (a *App) initMigrations() {
+	a.UserModule.Migration.CreateUsersTable(a.GormDB)
+}
+
 func (a *App) initMiddlewares() {
 	firebaseMiddleware := middleware.NewFirebaseMiddleware(a.FirebaseModule.FirebaseApp)
 	a.Middlewares = append(a.Middlewares, firebaseMiddleware)
@@ -52,6 +56,7 @@ func (a *App) initComponents() {
 	a.initDB()
 	a.Gin = pkg.NewGin()
 	a.initModules()
+	a.initMigrations()
 	a.initMiddlewares()
 	a.initModuleRouters()
 }

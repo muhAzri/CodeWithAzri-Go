@@ -12,11 +12,6 @@ func RegisterUserRoutes(e *gin.Engine, version string, module *user.Module, fire
 	routes := e.Group(constant.ApiPattern + version + constant.UsersPattern)
 	routes.Use(firebaseMiddleware.AuthMiddleware())
 
-	//Dummy Endpoint Remove It Later
-	routes.GET(constant.RootPattern, func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "This is a dummy endpoint",
-		})
-	})
+	routes.POST(constant.RootPattern, module.Handler.Create)
 
 }
