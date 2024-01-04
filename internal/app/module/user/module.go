@@ -2,6 +2,7 @@ package user
 
 import (
 	"CodeWithAzri/internal/app/module/user/handler"
+	"CodeWithAzri/internal/app/module/user/migration"
 	"CodeWithAzri/internal/app/module/user/repository"
 	"CodeWithAzri/internal/app/module/user/service"
 
@@ -13,6 +14,7 @@ type Module struct {
 	Handler    *handler.Handler
 	Service    *service.Service
 	Repository *repository.Repository
+	Migration  *migration.UserMigration
 }
 
 func NewModule(db *gorm.DB, validate *validator.Validate) *Module {
@@ -20,5 +22,6 @@ func NewModule(db *gorm.DB, validate *validator.Validate) *Module {
 	m.Repository = repository.NewRepository(db)
 	m.Service = service.NewService(*m.Repository)
 	m.Handler = handler.NewHandler(m.Service, validate)
+	m.Migration = &migration.UserMigration{}
 	return m
 }

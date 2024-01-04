@@ -1,6 +1,7 @@
 package dto
 
-type CreateUserDto struct {
+type CreateUpdateDto struct {
+	ID    string
 	Name  string `json:"name" binding:"required"`
 	Email string `json:"email" binding:"required"`
 }

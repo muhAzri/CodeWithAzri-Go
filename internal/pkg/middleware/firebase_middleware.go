@@ -67,14 +67,20 @@ func initializeFirebaseAuthClient(app *firebase.App) (*firebaseAuth.Client, erro
 
 // HandleFirebaseAuthInitializationError handles Firebase Auth initialization errors.
 func handleFirebaseAuthInitializationError(ctx *gin.Context) {
-	response := response.CreateErrorResponse("Internal Server error", http.StatusInternalServerError, "error", "Firebase Auth client initialization failed")
-	ctx.AbortWithStatusJSON(http.StatusInternalServerError, response)
+	response.RespondErrorMessage(
+		http.StatusInternalServerError,
+		"Firebase Auth client initialization failed",
+		ctx,
+	)
 }
 
 // HandleAuthorizationHeaderMissingError handles missing authorization header errors.
 func handleAuthorizationHeaderMissingError(ctx *gin.Context) {
-	response := response.CreateErrorResponse("Unauthorized", http.StatusUnauthorized, "error", "Authorization header is required")
-	ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
+	response.RespondErrorMessage(
+		http.StatusUnauthorized,
+		"Authorization header is required",
+		ctx,
+	)
 }
 
 // VerifyIDToken verifies the ID token using Firebase Auth client.
@@ -88,6 +94,9 @@ func verifyIDToken(client *firebaseAuth.Client, idToken string) (*firebaseAuth.T
 
 // HandleInvalidTokenError handles invalid token errors.
 func handleInvalidTokenError(ctx *gin.Context) {
-	response := response.CreateErrorResponse("Unauthorized", http.StatusUnauthorized, "error", "Token Invalid")
-	ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
+	response.RespondErrorMessage(
+		http.StatusUnauthorized,
+		"Token Invalid",
+		ctx,
+	)
 }
