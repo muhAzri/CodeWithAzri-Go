@@ -3,10 +3,8 @@ package handler
 import (
 	"CodeWithAzri/internal/app/module/user/dto"
 	"CodeWithAzri/internal/app/module/user/service"
-	jsonpkg "CodeWithAzri/pkg/jsonPkg"
 	"CodeWithAzri/pkg/requestPkg"
 	"CodeWithAzri/pkg/response"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,32 +23,15 @@ func NewHandler(s *service.Service, v *validator.Validate) *Handler {
 	return h
 }
 
-func (h *Handler) parseValidateRequestBody(ctx *gin.Context) (dto.CreateUpdateDto, error) {
+func (h *Handler) Create(ctx *gin.Context) {
 	var d dto.CreateUpdateDto
 
-	err := jsonpkg.Decode(ctx.Request.Body, &d)
-	if err != nil {
-		return d, err
-	}
-	// validate request body
-	err = h.validate.Struct(d)
-	if err != nil {
-		// Struct is invalid
-		// for checking only
-		for _, err := range err.(validator.ValidationErrors) {
-			fmt.Println(err.Field(), err.Tag())
-		}
-	}
-	return d, err
-}
-
-func (h *Handler) Create(ctx *gin.Context) {
-	d, err := h.parseValidateRequestBody(ctx)
-	d.ID = requestPkg.GetUserID(ctx)
-
+	err := ctx.BindJSON(&d)
 	if err != nil {
 		response.RespondError(http.StatusBadRequest, err, ctx)
 		return
 	}
+	d.ID = requestPkg.GetUserID(ctx)
+
 	h.service.Create(&d, ctx)
 }

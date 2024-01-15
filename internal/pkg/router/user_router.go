@@ -9,9 +9,9 @@ import (
 )
 
 func RegisterUserRoutes(e *gin.Engine, version string, module *user.Module, firebaseMiddleware *middleware.FirebaseMiddleware) {
-	routes := e.Group(constant.ApiPattern + version + constant.UsersPattern)
+	routes := e.Group(constant.ApiPattern + version)
 	routes.Use(firebaseMiddleware.AuthMiddleware())
 
-	routes.POST(constant.RootPattern, module.Handler.Create)
+	routes.POST(constant.UsersPattern, module.Handler.Create)
 
 }

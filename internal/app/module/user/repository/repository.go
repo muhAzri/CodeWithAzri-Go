@@ -2,58 +2,74 @@ package repository
 
 import (
 	"CodeWithAzri/internal/app/module/user/entity"
-
-	"gorm.io/gorm"
+	"database/sql"
 )
 
-type Repository struct {
-	db *gorm.DB
+type UserRepository interface {
+	Create(e *entity.User) error
+	ReadMany(limit, offset int) ([]entity.User, error)
+	ReadOne(id string) (*entity.User, error)
+	Update(id string, e *entity.User) error
+	Delete(id string) error
 }
 
-func NewRepository(db *gorm.DB) *Repository {
+type Repository struct {
+	db *sql.DB
+}
+
+func NewRepository(db *sql.DB) *Repository {
 	r := &Repository{db: db}
 	return r
 }
 
 func (r *Repository) Create(e *entity.User) error {
-	return r.db.Create(e).Error
+	query := "INSERT INTO users (id, name, email, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)"
+	_, err := r.db.Exec(query, e.ID, e.Name, e.Email, e.CreatedAt, e.UpdatedAt)
+	return err
 }
 
 func (r *Repository) ReadMany(limit, offset int) ([]entity.User, error) {
-	var users []entity.User
-	err := r.db.Limit(limit).Offset(offset).Find(&users).Error
+	query := "SELECT * FROM users LIMIT $1 OFFSET $2"
+	rows, err := r.db.Query(query, limit, offset)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
+	var users []entity.User
+	for rows.Next() {
+		var user entity.User
+		err := rows.Scan(&user.ID, &user.Name)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
 	return users, nil
 }
 
 func (r *Repository) ReadOne(id string) (*entity.User, error) {
+	query := "SELECT * FROM users WHERE id = $1"
+	row := r.db.QueryRow(query, id)
+
 	var user entity.User
-	if err := r.db.Where("id = ?", id).First(&user).Error; err != nil {
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
 		return nil, err
 	}
+
 	return &user, nil
 }
 
 func (r *Repository) Update(id string, e *entity.User) error {
-	var user entity.User
-	if err := r.db.First(&user, id).Error; err != nil {
-		return err
-	}
-
-	user.Name = e.Name
-
-	if err := r.db.Save(&user).Error; err != nil {
-		return err
-	}
-
-	return nil
+	query := "UPDATE users SET name = $1 WHERE id = $2"
+	_, err := r.db.Exec(query, e.Name, id)
+	return err
 }
 
 func (r *Repository) Delete(id string) error {
-	if err := r.db.Delete(&entity.User{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	query := "DELETE FROM users WHERE id = $1"
+	_, err := r.db.Exec(query, id)
+	return err
 }

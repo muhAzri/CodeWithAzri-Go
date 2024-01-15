@@ -8,8 +8,9 @@ func BuildData(payload interface{}) *Response {
 	return &Response{Data: payload}
 }
 
-func Respond(code int, payload interface{}, ctx *gin.Context) {
+func Respond(code int, metaData Meta, payload interface{}, ctx *gin.Context) {
 	response := &Response{
+		Meta: metaData,
 		Data: payload,
 	}
 	ctx.JSON(code, response)

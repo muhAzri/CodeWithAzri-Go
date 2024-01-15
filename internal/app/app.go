@@ -7,14 +7,14 @@ import (
 	"CodeWithAzri/internal/pkg/constant"
 	"CodeWithAzri/internal/pkg/middleware"
 	"CodeWithAzri/internal/pkg/router"
-	"CodeWithAzri/pkg/gormPkg"
+	"CodeWithAzri/pkg/sqlPkg"
+	"database/sql"
 
 	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm"
 )
 
 type App struct {
-	GormDB         *gorm.DB
+	SqlDB          *sql.DB
 	Gin            *pkg.Gin
 	Middlewares    []any
 	UserModule     *user.Module
@@ -30,16 +30,20 @@ func NewApp() *App {
 }
 
 func (a *App) initDB() {
-	a.GormDB = gormPkg.Initiliaze()
+	var err error
+	a.SqlDB, err = sqlPkg.Initialize()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (a *App) initModules() {
-	a.UserModule = user.NewModule(a.GormDB, a.Validate)
+	a.UserModule = user.NewModule(a.SqlDB, a.Validate)
 	a.FirebaseModule = firebaseModule.NewModule()
 }
 
 func (a *App) initMigrations() {
-	a.UserModule.Migration.CreateUsersTable(a.GormDB)
+	a.UserModule.Migration.CreateUsersTable(a.SqlDB)
 }
 
 func (a *App) initMiddlewares() {

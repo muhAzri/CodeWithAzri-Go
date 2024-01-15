@@ -7,10 +7,15 @@ import (
 	"CodeWithAzri/pkg/adapter"
 	"CodeWithAzri/pkg/response"
 	timepkg "CodeWithAzri/pkg/timePkg"
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+type UserService interface {
+	Create(dto *dto.CreateUpdateDto, ctx *gin.Context)
+}
 
 type Service struct {
 	repository repository.Repository
@@ -23,6 +28,23 @@ func NewService(r repository.Repository) *Service {
 }
 
 func (s *Service) Create(dto *dto.CreateUpdateDto, ctx *gin.Context) {
+	// Check if the user already exists
+	existingUser, err := s.repository.ReadOne(dto.ID)
+
+	if err != nil && err != sql.ErrNoRows {
+		response.RespondError(http.StatusInternalServerError, err, ctx)
+		return
+	}
+
+	if existingUser != nil {
+		response.Respond(http.StatusOK, response.Meta{
+			Message: "User Getted Successfully",
+			Code:    http.StatusOK,
+			Status:  "success",
+		}, existingUser, ctx)
+		return
+	}
+
 	user, err := adapter.AnyToType[entity.User](dto)
 
 	if err != nil {
@@ -42,5 +64,9 @@ func (s *Service) Create(dto *dto.CreateUpdateDto, ctx *gin.Context) {
 		return
 	}
 
-	response.Respond(http.StatusCreated, response.BuildData(dto), ctx)
+	response.Respond(http.StatusCreated, response.Meta{
+		Message: "User Created Successfully",
+		Code:    http.StatusCreated,
+		Status:  "success",
+	}, dto, ctx)
 }
