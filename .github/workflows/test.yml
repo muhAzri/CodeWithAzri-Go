@@ -38,7 +38,7 @@ jobs:
       run: ls -la
 
     - name: Run tests and generate coverage for internal package
-      run: go test -race -coverprofile=coverage.out -covermode=atomic
+      run: go test -race -coverprofile=coverage.out -covermode=atomic ./internal/...
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
