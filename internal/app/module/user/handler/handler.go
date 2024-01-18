@@ -5,9 +5,9 @@ import (
 	"CodeWithAzri/internal/app/module/user/service"
 	"CodeWithAzri/pkg/requestPkg"
 	"CodeWithAzri/pkg/response"
+	"encoding/json"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -23,15 +23,21 @@ func NewHandler(s *service.Service, v *validator.Validate) *Handler {
 	return h
 }
 
-func (h *Handler) Create(ctx *gin.Context) {
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var d dto.CreateUpdateDto
 
-	err := ctx.BindJSON(&d)
-	if err != nil {
-		response.RespondError(http.StatusBadRequest, err, ctx)
+	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
+		response.RespondError(http.StatusBadRequest, err, w)
 		return
 	}
-	d.ID = requestPkg.GetUserID(ctx)
+	defer r.Body.Close()
 
-	h.service.Create(&d, ctx)
+	if err := h.validate.Struct(d); err != nil {
+		response.RespondError(http.StatusBadRequest, err, w)
+		return
+	}
+
+	d.ID = requestPkg.GetUserID(r)
+
+	h.service.Create(&d, w, r)
 }

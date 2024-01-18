@@ -1,18 +1,16 @@
 package pkg
 
 import (
-	"CodeWithAzri/internal/pkg/router"
-
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-type Gin struct {
-	Engine *gin.Engine
+type Server struct {
+	Mux *http.ServeMux
 }
 
-func NewGin() *Gin {
-	g := &Gin{}
-	g.Engine = gin.Default()
-	router.RegisterGlobalMiddlewares(g.Engine)
-	return g
+func NewServer() *Server {
+	s := &Server{
+		Mux: http.NewServeMux(),
+	}
+	return s
 }

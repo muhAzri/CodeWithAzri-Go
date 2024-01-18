@@ -9,12 +9,10 @@ import (
 	timepkg "CodeWithAzri/pkg/timePkg"
 	"database/sql"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 type UserService interface {
-	Create(dto *dto.CreateUpdateDto, ctx *gin.Context)
+	Create(dto *dto.CreateUpdateDto, w http.ResponseWriter, r *http.Request)
 }
 
 type Service struct {
@@ -27,12 +25,12 @@ func NewService(r repository.Repository) *Service {
 	return s
 }
 
-func (s *Service) Create(dto *dto.CreateUpdateDto, ctx *gin.Context) {
+func (s *Service) Create(dto *dto.CreateUpdateDto, w http.ResponseWriter, r *http.Request) {
 	// Check if the user already exists
 	existingUser, err := s.repository.ReadOne(dto.ID)
 
 	if err != nil && err != sql.ErrNoRows {
-		response.RespondError(http.StatusInternalServerError, err, ctx)
+		response.RespondError(http.StatusInternalServerError, err, w)
 		return
 	}
 
@@ -41,14 +39,14 @@ func (s *Service) Create(dto *dto.CreateUpdateDto, ctx *gin.Context) {
 			Message: "User Getted Successfully",
 			Code:    http.StatusOK,
 			Status:  "success",
-		}, existingUser, ctx)
+		}, existingUser, w)
 		return
 	}
 
 	user, err := adapter.AnyToType[entity.User](dto)
 
 	if err != nil {
-		response.RespondError(http.StatusBadRequest, err, ctx)
+		response.RespondError(http.StatusBadRequest, err, w)
 		return
 	}
 
@@ -60,7 +58,7 @@ func (s *Service) Create(dto *dto.CreateUpdateDto, ctx *gin.Context) {
 	err = s.repository.Create(&user)
 
 	if err != nil {
-		response.RespondError(http.StatusInternalServerError, err, ctx)
+		response.RespondError(http.StatusInternalServerError, err, w)
 		return
 	}
 
@@ -68,5 +66,5 @@ func (s *Service) Create(dto *dto.CreateUpdateDto, ctx *gin.Context) {
 		Message: "User Created Successfully",
 		Code:    http.StatusCreated,
 		Status:  "success",
-	}, dto, ctx)
+	}, dto, w)
 }
