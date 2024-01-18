@@ -35,7 +35,7 @@ jobs:
       run: go mod download
 
     - name: Run tests and generate coverage for internal package
-      run: go test -v -coverprofile=coverage.out ./CodeWithAzri-Go/internal/...
+      run: go test -race -coverprofile=coverage.out -covermode=atomic
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
