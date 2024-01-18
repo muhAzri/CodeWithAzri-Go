@@ -17,6 +17,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Cache Go dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/go/pkg/mod
+        key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-${{ runner.os }}-
+
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
