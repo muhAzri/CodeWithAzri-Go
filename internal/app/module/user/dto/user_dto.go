@@ -1,7 +1,7 @@
 package dto
 
 type CreateUpdateDto struct {
-	ID    string
-	Name  string `json:"name" binding:"required"`
-	Email string `json:"email" binding:"required"`
+	ID    string `json:"id"`
+	Name  string `json:"name" validate:"required"`
+	Email string `json:"email" validate:"required,email"`
 }

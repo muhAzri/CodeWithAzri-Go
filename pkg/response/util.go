@@ -1,21 +1,30 @@
 package response
 
 import (
-	"github.com/gin-gonic/gin"
+	"encoding/json"
+	"net/http"
 )
 
-func BuildData(payload interface{}) *Response {
-	return &Response{Data: payload}
+func respondWithJSON(code int, data interface{}, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
-func Respond(code int, payload interface{}, ctx *gin.Context) {
+func Respond(code int, metaData Meta, payload interface{}, w http.ResponseWriter) {
+
 	response := &Response{
+		Meta: metaData,
 		Data: payload,
 	}
-	ctx.JSON(code, response)
+
+	respondWithJSON(code, response, w)
 }
 
-func RespondError(code int, err error, ctx *gin.Context) {
+func RespondError(code int, err error, w http.ResponseWriter) {
 	response := &Response{
 		Error: map[string]string{"error": err.Error()},
 		Meta: Meta{
@@ -24,10 +33,11 @@ func RespondError(code int, err error, ctx *gin.Context) {
 			Status:  "error",
 		},
 	}
-	ctx.JSON(code, response)
+
+	respondWithJSON(code, response, w)
 }
 
-func RespondErrorMessage(code int, msg string, ctx *gin.Context) {
+func RespondErrorMessage(code int, msg string, w http.ResponseWriter) {
 	response := &Response{
 		Error: map[string]string{"error": msg},
 		Meta: Meta{
@@ -36,5 +46,6 @@ func RespondErrorMessage(code int, msg string, ctx *gin.Context) {
 			Status:  "error",
 		},
 	}
-	ctx.JSON(code, response)
+
+	respondWithJSON(code, response, w)
 }

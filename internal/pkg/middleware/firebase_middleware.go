@@ -9,7 +9,12 @@ import (
 
 	firebase "firebase.google.com/go"
 	firebaseAuth "firebase.google.com/go/auth"
-	"github.com/gin-gonic/gin"
+)
+
+type UserIDKey string
+
+const (
+	UserIDContextKey UserIDKey = "UserID"
 )
 
 // FirebaseMiddleware represents Firebase middleware.
@@ -24,36 +29,42 @@ func NewFirebaseMiddleware(firebaseApp *firebase.App) *FirebaseMiddleware {
 	}
 }
 
-// FirebaseAuthMiddleware is middleware to handle Firebase authentication.
-func (fa *FirebaseMiddleware) AuthMiddleware() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+// AuthMiddleware is middleware to handle Firebase authentication.
+func (fa *FirebaseMiddleware) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		client, err := initializeFirebaseAuthClient(fa.FirebaseApp)
 		if err != nil {
-			handleFirebaseAuthInitializationError(ctx)
+			handleFirebaseAuthInitializationError(w)
 			return
 		}
 
-		idToken := ctx.GetHeader("Authorization")
+		idToken := r.Header.Get("Authorization")
 		if idToken == "" {
-			handleAuthorizationHeaderMissingError(ctx)
+			handleAuthorizationHeaderMissingError(w)
 			return
 		}
 
 		tokenParts := strings.Split(idToken, "Bearer ")
 		if len(tokenParts) != 2 {
-			handleInvalidTokenError(ctx)
+			handleInvalidTokenError(w)
 			return
 		}
 		idToken = tokenParts[1]
 
 		decoded, err := verifyIDToken(client, idToken)
 		if err != nil {
-			handleInvalidTokenError(ctx)
+			handleInvalidTokenError(w)
 			return
 		}
 
-		ctx.Set("UserID", decoded.UID)
-	}
+		if decoded == nil || decoded.UID == "" {
+			handleInvalidTokenError(w)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), UserIDContextKey, decoded.UID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 // InitializeFirebaseAuthClient initializes the Firebase Auth client.
@@ -66,20 +77,20 @@ func initializeFirebaseAuthClient(app *firebase.App) (*firebaseAuth.Client, erro
 }
 
 // HandleFirebaseAuthInitializationError handles Firebase Auth initialization errors.
-func handleFirebaseAuthInitializationError(ctx *gin.Context) {
+func handleFirebaseAuthInitializationError(w http.ResponseWriter) {
 	response.RespondErrorMessage(
 		http.StatusInternalServerError,
 		"Firebase Auth client initialization failed",
-		ctx,
+		w,
 	)
 }
 
 // HandleAuthorizationHeaderMissingError handles missing authorization header errors.
-func handleAuthorizationHeaderMissingError(ctx *gin.Context) {
+func handleAuthorizationHeaderMissingError(w http.ResponseWriter) {
 	response.RespondErrorMessage(
 		http.StatusUnauthorized,
 		"Authorization header is required",
-		ctx,
+		w,
 	)
 }
 
@@ -93,10 +104,10 @@ func verifyIDToken(client *firebaseAuth.Client, idToken string) (*firebaseAuth.T
 }
 
 // HandleInvalidTokenError handles invalid token errors.
-func handleInvalidTokenError(ctx *gin.Context) {
+func handleInvalidTokenError(w http.ResponseWriter) {
 	response.RespondErrorMessage(
 		http.StatusUnauthorized,
 		"Token Invalid",
-		ctx,
+		w,
 	)
 }
