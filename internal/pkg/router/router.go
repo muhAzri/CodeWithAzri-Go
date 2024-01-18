@@ -1,13 +1,15 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
+	"CodeWithAzri/internal/pkg/middleware"
+	"net/http"
 )
 
-func RegisterGlobalMiddlewares(e *gin.Engine) {
+func RegisterGlobalMiddleware(mux *http.ServeMux, firebaseMiddleware *middleware.FirebaseMiddleware) http.Handler {
+	combinedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Your logic for combining the middlewares goes here
+		firebaseMiddleware.AuthMiddleware(middleware.LoggerMiddleware(mux)).ServeHTTP(w, r)
+	})
 
-	e.Use(gin.Logger())
-
-	e.Use(gin.Recovery())
-
+	return combinedHandler
 }
