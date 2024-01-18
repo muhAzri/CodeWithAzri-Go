@@ -34,11 +34,9 @@ jobs:
     - name: Install dependencies
       run: go mod download
 
-    - name: see folder structure
-      run: ls -la
 
     - name: Run tests and generate coverage for internal package
-      run: go test -race -coverprofile=coverage.out -covermode=atomic ./internal/...
+      run: go test -race -coverprofile=coverage.out -covermode=atomic ./internal/app/...
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
