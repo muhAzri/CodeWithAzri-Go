@@ -5,19 +5,23 @@ import (
 	"net/http"
 )
 
+func respondWithJSON(code int, data interface{}, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
 func Respond(code int, metaData Meta, payload interface{}, w http.ResponseWriter) {
+
 	response := &Response{
 		Meta: metaData,
 		Data: payload,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		// Handle encoding error if needed
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	respondWithJSON(code, response, w)
 }
 
 func RespondError(code int, err error, w http.ResponseWriter) {
@@ -30,13 +34,7 @@ func RespondError(code int, err error, w http.ResponseWriter) {
 		},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		// Handle encoding error if needed
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	respondWithJSON(code, response, w)
 }
 
 func RespondErrorMessage(code int, msg string, w http.ResponseWriter) {
@@ -49,11 +47,5 @@ func RespondErrorMessage(code int, msg string, w http.ResponseWriter) {
 		},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		// Handle encoding error if needed
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	respondWithJSON(code, response, w)
 }

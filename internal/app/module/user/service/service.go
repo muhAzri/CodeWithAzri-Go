@@ -66,5 +66,5 @@ func (s *Service) Create(dto *dto.CreateUpdateDto, w http.ResponseWriter, r *htt
 		Message: "User Created Successfully",
 		Code:    http.StatusCreated,
 		Status:  "success",
-	}, dto, w)
+	}, user, w)
 }
