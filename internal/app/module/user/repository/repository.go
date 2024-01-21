@@ -39,7 +39,7 @@ func (r *Repository) ReadMany(limit, offset int) ([]entity.User, error) {
 	var users []entity.User
 	for rows.Next() {
 		var user entity.User
-		err := rows.Scan(&user.ID, &user.Name)
+		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
