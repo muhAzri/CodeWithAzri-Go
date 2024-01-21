@@ -173,3 +173,17 @@ func TestRepository_Delete_NoRecord(t *testing.T) {
 	assert.ErrorIs(t, err, sql.ErrNoRows)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestRepository_ReadMany_Error(t *testing.T) {
+	db, mock, repo := initializeMockDB(t)
+	defer db.Close()
+
+	mock.ExpectQuery("SELECT * FROM users LIMIT $1 OFFSET $2").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnError(sql.ErrTxDone)
+
+	_, err := repo.ReadMany(10, 0)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, sql.ErrTxDone)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
