@@ -14,6 +14,19 @@ func respondWithJSON(code int, data interface{}, w http.ResponseWriter) {
 	}
 }
 
+func BuildResponse(code int, metaMessage string, metaStatus string, payload interface{}, w http.ResponseWriter) {
+	response := Response{
+		Meta: Meta{
+			Message: metaMessage,
+			Code:    code,
+			Status:  metaStatus,
+		},
+		Data: payload,
+	}
+
+	respondWithJSON(code, response, w)
+}
+
 func Respond(code int, metaData Meta, payload interface{}, w http.ResponseWriter) {
 
 	response := &Response{

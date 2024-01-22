@@ -12,11 +12,11 @@ import (
 )
 
 type Handler struct {
-	service  *service.Service
+	service  service.UserService
 	validate *validator.Validate
 }
 
-func NewHandler(s *service.Service, v *validator.Validate) *Handler {
+func NewHandler(s service.UserService, v *validator.Validate) *Handler {
 	h := new(Handler)
 	h.service = s
 	h.validate = v
@@ -39,5 +39,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	d.ID = requestPkg.GetUserID(r)
 
-	h.service.Create(&d, w, r)
+	user, err := h.service.Create(&d)
+	if err != nil {
+		response.RespondError(http.StatusInternalServerError, err, w)
+		return
+	}
+
+	response.BuildResponse(http.StatusOK, "User Created/Fetched Successfully", "Success", user, w)
 }
