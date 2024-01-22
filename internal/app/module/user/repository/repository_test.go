@@ -25,7 +25,7 @@ func TestRepository_Create(t *testing.T) {
 	db, mock, repo := initializeMockDB(t)
 	defer db.Close()
 
-	user := &entity.User{
+	user := entity.User{
 		ID:        "1",
 		Name:      "John Doe",
 		Email:     "john@example.com",
@@ -64,7 +64,7 @@ func TestRepository_ReadOne(t *testing.T) {
 	defer db.Close()
 
 	userID := "1"
-	user := &entity.User{
+	user := entity.User{
 		ID:        userID,
 		Name:      "John Doe",
 		Email:     "john@example.com",
@@ -90,7 +90,7 @@ func TestRepository_Update(t *testing.T) {
 	defer db.Close()
 
 	userID := "1"
-	user := &entity.User{
+	user := entity.User{
 		ID:        userID,
 		Name:      "Updated Name",
 		Email:     "john@example.com",
@@ -151,7 +151,7 @@ func TestRepository_ReadOne_NoRecord(t *testing.T) {
 		WillReturnError(sql.ErrNoRows)
 
 	result, err := repo.ReadOne(userID)
-	assert.Nil(t, result)
+	assert.Empty(t, result.ID)
 	assert.ErrorIs(t, err, sql.ErrNoRows)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

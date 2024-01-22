@@ -1,7 +1,7 @@
 package service
 
 import (
-	"CodeWithAzri/internal/app/module/user/dto"
+	dto "CodeWithAzri/internal/app/module/user/dto"
 	"CodeWithAzri/internal/app/module/user/entity"
 	"CodeWithAzri/internal/app/module/user/repository"
 	"CodeWithAzri/pkg/adapter"
@@ -30,9 +30,9 @@ func (s *Service) Create(dto *dto.CreateUpdateDto) (entity.User, error) {
 		return entity.User{}, err
 	}
 
-	if existingUser != nil {
+	if existingUser.ID != "" {
 
-		return *existingUser, nil
+		return existingUser, nil
 	}
 
 	user, err := adapter.AnyToType[entity.User](dto)
@@ -47,7 +47,7 @@ func (s *Service) Create(dto *dto.CreateUpdateDto) (entity.User, error) {
 	user.CreatedAt = now
 	user.UpdatedAt = now
 
-	err = s.repository.Create(&user)
+	err = s.repository.Create(user)
 
 	if err != nil {
 
