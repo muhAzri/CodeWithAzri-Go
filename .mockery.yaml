@@ -11,4 +11,5 @@ packages:
     CodeWithAzri/internal/app/module/user/service:
         interfaces:
             UserService:
+    CodeWithAzri/pkg/adapter:
        

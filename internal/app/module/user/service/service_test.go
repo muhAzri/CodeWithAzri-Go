@@ -7,11 +7,13 @@ import (
 	"CodeWithAzri/internal/app/module/user/service"
 	timepkg "CodeWithAzri/pkg/timePkg"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"bou.ke/monkey"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func initializeService(t *testing.T) (service.UserService, *mocks.UserRepository) {
@@ -136,6 +138,30 @@ func TestService_CreateError(t *testing.T) {
 			Name:  "Error Case",
 			Email: "error.case@example.com",
 		}
+
+		createdUser, err := userService.Create(createUpdateDto)
+
+		assert.Error(t, err)
+		assert.Equal(t, entity.User{}, createdUser)
+	})
+}
+
+func TestService_CreateConversionError(t *testing.T) {
+	userService, mockRepo := initializeService(t)
+
+	t.Run("Error Converting DTO to Entity", func(t *testing.T) {
+		createUpdateDto := &dto.CreateUpdateDto{
+			ID:    "789",
+			Name:  "Invalid User",
+			Email: "invalid.user@example.com",
+		}
+
+		patch := monkey.Patch(json.Marshal, func(v any) ([]byte, error) {
+			return nil, errors.New("mocked error during json.Marshal")
+		})
+		defer patch.Unpatch()
+
+		mockRepo.On("ReadOne", mock.AnythingOfType("string")).Return(entity.User{}, nil)
 
 		createdUser, err := userService.Create(createUpdateDto)
 

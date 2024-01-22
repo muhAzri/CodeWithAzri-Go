@@ -39,7 +39,6 @@ func (s *Service) Create(dto *dto.CreateUpdateDto) (entity.User, error) {
 
 	if err != nil {
 		return entity.User{}, err
-
 	}
 
 	now := timepkg.NowUnixMilli()
