@@ -54,33 +54,48 @@ func TestService_Create(t *testing.T) {
 		assert.Equal(t, createUpdateDto.Email, createdUser.Email)
 	})
 
-	// Test Case 2: Existing user, should return existing user without creating a new one
-	// t.Run("Existing User", func(t *testing.T) {
-	// 	existingUser := entity.User{
-	// 		ID:        "123",
-	// 		Name:      "Jane Doe",
-	// 		Email:     "Jane Doe",
-	// 		CreatedAt: 12121212,
-	// 		UpdatedAt: 12121212,
-	// 	}
-
-	// 	// Set up the mock with the expected argument and return value
-	// 	mockRepo.On("ReadOne", existingUser.ID).Return(existingUser, nil)
-
-	// 	createUpdateDto := &dto.CreateUpdateDto{
-	// 		ID:    existingUser.ID,
-	// 		Name:  "Jane Doe", // The name in the DTO should not affect the existing user
-	// 		Email: "Jane Doe", // The email in the DTO should not affect the existing user
-	// 	}
-
-	// 	createdUser, err := userService.Create(createUpdateDto)
-
-	// 	assert.NoError(t, err)
-	// 	assert.NotNil(t, createdUser)
-	// 	assert.Equal(t, &existingUser, &createdUser)
-	// })
-
 	// // Test Case 3: Error when creating user
+
+}
+
+func TestService_CreateUserExisted(t *testing.T) {
+
+	userService, mockRepo := initializeService(t)
+
+	// Test Case 2: Existing user, should return existing user without creating a new one
+	t.Run("Existing User", func(t *testing.T) {
+		existingUser := entity.User{
+			ID:        "123",
+			Name:      "John Doe",
+			Email:     "john.doe@example.com",
+			CreatedAt: 12121212,
+			UpdatedAt: 12121212,
+		}
+
+		patch := monkey.Patch(timepkg.NowUnixMilli, func() int64 { return 12121212 })
+		defer patch.Unpatch()
+
+		// Set up the mock with the expected argument and return value
+		mockRepo.On("ReadOne", existingUser.ID).Return(existingUser, nil)
+
+		createUpdateDto := &dto.CreateUpdateDto{
+			ID:    existingUser.ID,
+			Name:  "John Doe",             // The name in the DTO should not affect the existing user
+			Email: "john.doe@example.com", // The email in the DTO should not affect the existing user
+		}
+
+		createdUser, err := userService.Create(createUpdateDto)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, createdUser)
+		assert.Equal(t, &existingUser, &createdUser)
+	})
+}
+
+func TestService_CreateError(t *testing.T) {
+
+	userService, mockRepo := initializeService(t)
+
 	t.Run("Error Creating User", func(t *testing.T) {
 		mockRepo.On("ReadOne", "456").Return(entity.User{}, errors.New("some error"))
 
