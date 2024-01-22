@@ -1,0 +1,15 @@
+with-expecter: true
+disable-version-string: True
+mockname: "{{.InterfaceName}}"
+filename: "{{.MockName}}.go"
+outpkg: mocks
+dir: "../{{.PackagePath}}/mocks"
+packages:
+    CodeWithAzri/internal/app/module/user/repository:
+        interfaces:
+            UserRepository:
+    CodeWithAzri/internal/app/module/user/service:
+        interfaces:
+            UserService:
+    CodeWithAzri/pkg/adapter:
+       

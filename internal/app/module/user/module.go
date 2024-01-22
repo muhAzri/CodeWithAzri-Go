@@ -12,15 +12,15 @@ import (
 
 type Module struct {
 	Handler    *handler.Handler
-	Service    *service.Service
-	Repository *repository.Repository
+	Service    service.UserService
+	Repository repository.UserRepository
 	Migration  *migration.UserMigration
 }
 
 func NewModule(db *sql.DB, validate *validator.Validate) *Module {
 	m := new(Module)
 	m.Repository = repository.NewRepository(db)
-	m.Service = service.NewService(*m.Repository)
+	m.Service = service.NewService(m.Repository)
 	m.Handler = handler.NewHandler(m.Service, validate)
 	m.Migration = &migration.UserMigration{}
 	return m
