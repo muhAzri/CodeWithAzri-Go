@@ -61,6 +61,7 @@ require (
 )
 
 require (
+	bou.ke/monkey v1.0.2
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/MadAppGang/httplog v1.3.0

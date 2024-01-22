@@ -10,6 +10,7 @@ import (
 	"errors"
 	"testing"
 
+	"bou.ke/monkey"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,20 +25,21 @@ func TestService_Create(t *testing.T) {
 
 	// Test Case 1: Successful creation
 	t.Run("Create User Successfully", func(t *testing.T) {
+		patch := monkey.Patch(timepkg.NowUnixMilli, func() int64 { return 12121212 })
+		defer patch.Unpatch()
+
 		createUpdateDto := &dto.CreateUpdateDto{
 			ID:    "123",
 			Name:  "John Doe",
 			Email: "john.doe@example.com",
 		}
 
-		now := timepkg.NowUnixMilli()
-
 		expectedUser := entity.User{
 			ID:        createUpdateDto.ID,
 			Name:      createUpdateDto.Name,
 			Email:     createUpdateDto.Email,
-			CreatedAt: now,
-			UpdatedAt: now,
+			CreatedAt: 12121212,
+			UpdatedAt: 12121212,
 		}
 
 		mockRepo.On("ReadOne", createUpdateDto.ID).Return(entity.User{}, sql.ErrNoRows)
