@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func initializeMockDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock, *repository.Repository) {
+func initializeMockDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock, repository.UserRepository) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
 		t.Fatalf("Error creating mock database: %v", err)
