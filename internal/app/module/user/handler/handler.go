@@ -47,3 +47,15 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	response.BuildResponse(http.StatusOK, "User Created/Fetched Successfully", "Success", user, w)
 }
+
+func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	ID := requestPkg.GetUserID(r)
+
+	user, err := h.service.GetProfile(ID)
+	if err != nil {
+		response.RespondError(http.StatusInternalServerError, err, w)
+		return
+	}
+
+	response.BuildResponse(http.StatusOK, "User Profile Fetched Successfully", "Success", user, w)
+}
