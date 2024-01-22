@@ -92,12 +92,44 @@ func TestService_CreateUserExisted(t *testing.T) {
 	})
 }
 
-func TestService_CreateError(t *testing.T) {
+func TestService_CreateCheckExistError(t *testing.T) {
 
 	userService, mockRepo := initializeService(t)
 
 	t.Run("Error Creating User", func(t *testing.T) {
 		mockRepo.On("ReadOne", "456").Return(entity.User{}, errors.New("some error"))
+
+		createUpdateDto := &dto.CreateUpdateDto{
+			ID:    "456",
+			Name:  "Error Case",
+			Email: "error.case@example.com",
+		}
+
+		createdUser, err := userService.Create(createUpdateDto)
+
+		assert.Error(t, err)
+		assert.Equal(t, entity.User{}, createdUser)
+	})
+}
+
+func TestService_CreateError(t *testing.T) {
+
+	userService, mockRepo := initializeService(t)
+
+	t.Run("Error Creating User", func(t *testing.T) {
+		existingUser := entity.User{
+			ID:        "456",
+			Name:      "Error Case",
+			Email:     "error.case@example.com",
+			CreatedAt: 12121212,
+			UpdatedAt: 12121212,
+		}
+
+		patch := monkey.Patch(timepkg.NowUnixMilli, func() int64 { return 12121212 })
+		defer patch.Unpatch()
+
+		mockRepo.On("ReadOne", "456").Return(entity.User{}, nil)
+		mockRepo.On("Create", existingUser).Return(sql.ErrTxDone)
 
 		createUpdateDto := &dto.CreateUpdateDto{
 			ID:    "456",
