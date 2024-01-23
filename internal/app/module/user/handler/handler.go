@@ -3,9 +3,9 @@ package handler
 import (
 	"CodeWithAzri/internal/app/module/user/dto"
 	"CodeWithAzri/internal/app/module/user/service"
+	jsonpkg "CodeWithAzri/pkg/jsonPkg"
 	"CodeWithAzri/pkg/requestPkg"
 	"CodeWithAzri/pkg/response"
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -26,11 +26,12 @@ func NewHandler(s service.UserService, v *validator.Validate) *Handler {
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var d dto.CreateUpdateDto
 
-	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
+	err := jsonpkg.Decode(r.Body, &d)
+
+	if err != nil {
 		response.RespondError(http.StatusBadRequest, err, w)
 		return
 	}
-	defer r.Body.Close()
 
 	if err := h.validate.Struct(d); err != nil {
 		response.RespondError(http.StatusBadRequest, err, w)
