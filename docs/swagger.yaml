@@ -1,0 +1,161 @@
+basePath: /api/v1
+definitions:
+  dto.CreateUpdateDto:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      profilePicture:
+        type: string
+    required:
+    - email
+    - name
+    - profilePicture
+    type: object
+  dto.UserDTO:
+    properties:
+      createdAt:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      profilePicture:
+        type: string
+      updatedAt:
+        type: integer
+    type: object
+  dto.UserProfileDTO:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      profilePicture:
+        type: string
+    type: object
+  response.Meta:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      meta:
+        $ref: '#/definitions/response.Meta'
+    type: object
+  response.ResponseError:
+    properties:
+      error: {}
+      meta:
+        $ref: '#/definitions/response.Meta'
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@codewithazri.com
+  description: API documentation for CodeWithAzri, an educational platform that offers
+    a free and collaborative environment for learning coding. Provides resources,
+    exercises, and a community for both mobile app and web app users.
+  license:
+    name: MIT
+  title: CodeWithAzri API
+  version: "1.0"
+paths:
+  /api/v1/users:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user if not exists or fetch the existing user based
+        on the provided data.
+      operationId: create-or-fetch-user
+      parameters:
+      - description: User data for creation or fetching
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUpdateDto'
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserDTO'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+      security:
+      - Bearer: []
+      summary: Create or fetch a user
+      tags:
+      - User
+  /api/v1/users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Fetch the profile of the authenticated user based on the provided
+        Authorization token.
+      operationId: get-user-profile
+      parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserProfileDTO'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+      security:
+      - Bearer: []
+      summary: Fetch user profile
+      tags:
+      - User
+swagger: "2.0"

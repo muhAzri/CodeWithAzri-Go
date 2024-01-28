@@ -23,6 +23,22 @@ func NewHandler(s service.UserService, v *validator.Validate) *Handler {
 	return h
 }
 
+// Create godoc
+//
+//	@Summary		Create or fetch a user
+//	@Tags			User
+//	@Description	Create a new user if not exists or fetch the existing user based on the provided data.
+//	@ID				create-or-fetch-user
+//	@Accept			json
+//	@Produce		json
+//	@Param			input			body	dto.CreateUpdateDto	true	"User data for creation or fetching"
+//	@Param			Authorization	header	string				true	"With the bearer started"
+//	@Security		Bearer
+//	@Success		200	{object}	response.Response{data=dto.UserDTO}
+//	@Failure		400	{object}	response.ResponseError
+//	@Failure		401	{object}	response.ResponseError
+//	@Failure		500	{object}	response.ResponseError
+//	@Router			/api/v1/users [post]
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var d dto.CreateUpdateDto
 
@@ -49,6 +65,20 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	response.BuildResponse(http.StatusOK, "User Created/Fetched Successfully", "Success", user, w)
 }
 
+// GetProfile godoc
+//
+//	@Summary		Fetch user profile
+//	@Tags			User
+//	@Description	Fetch the profile of the authenticated user based on the provided Authorization token.
+//	@ID				get-user-profile
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization	header	string	true	"Bearer token for authentication"
+//	@Security		Bearer
+//	@Success		200	{object}	response.Response{data=dto.UserProfileDTO}
+//	@Failure		401	{object}	response.ResponseError
+//	@Failure		500	{object}	response.ResponseError
+//	@Router			/api/v1/users/profile [get]
 func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	ID := requestPkg.GetUserID(r)
 

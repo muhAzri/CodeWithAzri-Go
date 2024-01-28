@@ -11,7 +11,10 @@ import (
 	"database/sql"
 	"net/http"
 
+	_ "CodeWithAzri/docs"
+
 	"github.com/go-playground/validator/v10"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type App struct {
@@ -52,6 +55,10 @@ func (a *App) initMiddlewares() {
 }
 
 func (a *App) initModuleRouters() {
+	http.Handle("/swagger/", http.StripPrefix("/swagger/", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	)))
+
 	m := a.Middlewares[0].(*middleware.FirebaseMiddleware)
 	globalMiddlewares := router.RegisterGlobalMiddleware(a.Server.Mux, m)
 	router.RegisterUserRoutes(a.Server.Mux, constant.V1, a.UserModule)
