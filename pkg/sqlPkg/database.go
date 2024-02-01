@@ -1,9 +1,9 @@
 package sqlPkg
 
 import (
+	"CodeWithAzri/pkg/config"
 	"database/sql"
 	"fmt"
-	"CodeWithAzri/pkg/config"
 
 	_ "github.com/lib/pq"
 )
@@ -11,15 +11,8 @@ import (
 var db *sql.DB
 
 func Initialize() (*sql.DB, error) {
-	dbUsername := config.GetEnvValue("DB_USER")
-	dbPassword := config.GetEnvValue("DB_PASS")
-	dbName := config.GetEnvValue("DB_NAME")
-	dbHost := config.GetEnvValue("DB_HOST")
-	dbPort := config.GetEnvValue("DB_PORT")
-	dbSSLMode := config.GetEnvValue("DB_SSL_MODE")
 
-	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=Asia/Shanghai",
-		dbHost, dbUsername, dbPassword, dbName, dbPort, dbSSLMode)
+	connStr := GetConnectionString()
 
 	var err error
 	db, err = sql.Open("postgres", connStr)
@@ -33,4 +26,18 @@ func Initialize() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func GetConnectionString() string {
+	dbUsername := config.GetEnvValue("DB_USER")
+	dbPassword := config.GetEnvValue("DB_PASS")
+	dbName := config.GetEnvValue("DB_NAME")
+	dbHost := config.GetEnvValue("DB_HOST")
+	dbPort := config.GetEnvValue("DB_PORT")
+	dbSSLMode := config.GetEnvValue("DB_SSL_MODE")
+
+	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=Asia/Shanghai",
+		dbHost, dbUsername, dbPassword, dbName, dbPort, dbSSLMode)
+
+	return connStr
 }

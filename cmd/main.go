@@ -10,12 +10,10 @@ import (
 //	@contact.email	support@codewithazri.com
 //	@license.name	MIT
 
-//	@host		localhost:8080
-//	@BasePath	/api/v1
+// @host		localhost:8080
+// @BasePath	/api/v1
 func main() {
-	// Initialize the CodeWithAzri application
 	a := app.NewApp()
 
-	// Run the server
 	a.Run()
 }
