@@ -5,6 +5,7 @@ import (
 	"CodeWithAzri/internal/app/module/course/repository"
 	"database/sql"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -480,7 +481,10 @@ func TestRepository_ReadOne(t *testing.T) {
 	testReadOneSuccess(t, mock, repo, courseEntity)
 
 	//Test Read One Scan Failure
-	testReadScanError(t, mock, repo, courseEntity)
+	testReadOneScanError(t, mock, repo, courseEntity)
+
+	//Test Read One Query Error
+	testReadOneQuerryError(t, mock, repo, courseEntity)
 }
 
 func testReadOneSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
@@ -506,7 +510,7 @@ func testReadOneSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.Cour
 	}
 }
 
-func testReadScanError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+func testReadOneScanError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
 
 	rows := sqlmock.NewRows([]string{
 		"course_id", "name", "description", "language", "created_at", "updated_at",
@@ -530,6 +534,23 @@ func testReadScanError(t *testing.T, mock sqlmock.Sqlmock, repo repository.Cours
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "sql: Scan error on column index 6, name \"tag_id\"")
+
+	err = mock.ExpectationsWereMet()
+	if err != nil {
+		t.Fatalf("Expectations not met: %v", err)
+	}
+}
+
+func testReadOneQuerryError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+
+	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at, s.id AS section_id, s.name AS section_name, s.course_id AS section_course_id, s.created_at, s.updated_at, l.id AS lesson_id, l.title AS lesson_title, l.video_url AS lesson_video_url, l.course_id AS lesson_course_id, l.course_section_id AS lesson_section_id, l.created_at, l.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LEFT JOIN course_sections s ON c.id = s.course_id LEFT JOIN course_lessons l ON s.id = l.course_section_id WHERE c.id = $1").
+		WithArgs(courseEntity.ID).
+		WillReturnError(fmt.Errorf("Querry Error"))
+
+	_, err := repo.ReadOne(courseEntity.ID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Querry Error")
 
 	err = mock.ExpectationsWereMet()
 	if err != nil {
