@@ -480,6 +480,7 @@ func TestRepository_ReadOne(t *testing.T) {
 }
 
 func testReadOneSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+
 	// Mocking the database query
 	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, created_at, updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at, s.id AS section_id, s.name AS section_name, s.course_id AS section_course_id, s.created_at, s.updated_at, l.id AS lesson_id, l.title AS lesson_title, l.video_url AS lesson_video_url, l.course_id AS lesson_course_id, l.course_section_id AS lesson_section_id, l.created_at, l.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LEFT JOIN course_sections s ON c.id = s.course_id LEFT JOIN course_lessons l ON s.id = l.course_section_id WHERE c.id = $1").
 		WithArgs(courseEntity.ID).
@@ -542,6 +543,15 @@ func prepareRows(courseEntity entity.Course) *sqlmock.Rows {
 			)
 		}
 	}
+
+	//This Additional Row is used to test the case on readOneScan when the lesson is same
+	rows.AddRow(
+		courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language,
+		uuid.Nil, "",
+		uuid.Nil, "", uuid.Nil,
+		"b2b71fda-f0f2-4358-9722-b3f13c4564a7", "Mock Section", "18a95d2f-a941-4a64-bbe5-256be7626db2",
+		"d60619ae-cee9-4877-8f5d-8b294fe9cd80", "Mock Lesson", "https://www.youtube.com", "18a95d2f-a941-4a64-bbe5-256be7626db2", "b2b71fda-f0f2-4358-9722-b3f13c4564a7",
+	)
 
 	return rows
 }
