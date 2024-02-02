@@ -101,7 +101,7 @@ func (r *Repository) Create(course entity.Course) error {
 
 func (r *Repository) ReadOne(id uuid.UUID) (entity.Course, error) {
 	courseQuery := `
-    SELECT c.id AS course_id, c.name, c.description, c.language, created_at, updated_at,
+    SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at,
            t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at,
            g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at,
            s.id AS section_id, s.name AS section_name, s.course_id AS section_course_id, s.created_at, s.updated_at,
@@ -335,11 +335,11 @@ func scanReadOne(rows *sql.Rows) (entity.Course, error) {
 		var section entity.CourseSection
 		var lesson entity.CourseLesson
 
-		err := rows.Scan(&course.ID, &course.Name, &course.Description, &course.Language,
-			&tag.ID, &tag.Name,
-			&gallery.ID, &gallery.URL, &gallery.CourseID,
-			&section.ID, &section.Name, &section.CourseID,
-			&lesson.ID, &lesson.Title, &lesson.VideoURL, &lesson.CourseID, &lesson.CourseSectionID,
+		err := rows.Scan(&course.ID, &course.Name, &course.Description, &course.Language, &course.CreatedAt, &course.UpdatedAt,
+			&tag.ID, &tag.Name, &tag.CreatedAt, &tag.UpdatedAt,
+			&gallery.ID, &gallery.URL, &gallery.CourseID, &gallery.CreatedAt, &gallery.UpdatedAt,
+			&section.ID, &section.Name, &section.CourseID, &section.CreatedAt, &section.UpdatedAt,
+			&lesson.ID, &lesson.Title, &lesson.VideoURL, &lesson.CourseID, &lesson.CourseSectionID, &lesson.CreatedAt, &lesson.UpdatedAt,
 		)
 		if err != nil {
 			return entity.Course{}, err
@@ -373,10 +373,12 @@ func scanReadOne(rows *sql.Rows) (entity.Course, error) {
 			if _, ok := sectionMap[section.ID]; !ok {
 				sectionMap[section.ID] = struct{}{}
 				currentSection := entity.CourseSection{
-					ID:       section.ID,
-					Name:     section.Name,
-					CourseID: section.CourseID,
-					Lessons:  []entity.CourseLesson{lesson},
+					ID:        section.ID,
+					Name:      section.Name,
+					CourseID:  section.CourseID,
+					Lessons:   []entity.CourseLesson{lesson},
+					CreatedAt: section.CreatedAt,
+					UpdatedAt: section.UpdatedAt,
 				}
 
 				course.Sections = append(course.Sections, currentSection)

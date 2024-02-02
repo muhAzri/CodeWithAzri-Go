@@ -16,14 +16,14 @@ var mockTags []entity.CourseTags = []entity.CourseTags{
 	{
 		ID:        uuid.MustParse("345c2c39-5a19-4842-bab8-072a53cd020b"),
 		Name:      "Mock Tag",
-		CreatedAt: 0,
-		UpdatedAt: 0,
+		CreatedAt: 121212,
+		UpdatedAt: 121212,
 	},
 	{
 		ID:        uuid.MustParse("7ccb15a4-483d-4b65-88f8-f2c6d2de3460"),
 		Name:      "Mock Tag 2",
-		CreatedAt: 0,
-		UpdatedAt: 0,
+		CreatedAt: 121212,
+		UpdatedAt: 121212,
 	},
 }
 
@@ -38,8 +38,8 @@ var MockEntity entity.Course = entity.Course{
 			ID:        uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a5"),
 			CourseID:  uuid.MustParse("18a95d2f-a941-4a64-bbe5-256be7626db2"),
 			URL:       "https://www.google.com",
-			CreatedAt: 0,
-			UpdatedAt: 0,
+			CreatedAt: 121212,
+			UpdatedAt: 121212,
 		},
 	},
 	Sections: []entity.CourseSection{
@@ -54,8 +54,8 @@ var MockEntity entity.Course = entity.Course{
 					CourseSectionID: uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a7"),
 					Title:           "Mock Lesson",
 					VideoURL:        "https://www.youtube.com",
-					CreatedAt:       0,
-					UpdatedAt:       0,
+					CreatedAt:       121212,
+					UpdatedAt:       121212,
 				},
 				{
 					ID:              uuid.MustParse("d60619ae-cee9-4877-8f5d-8b294fe9cd81"),
@@ -63,12 +63,12 @@ var MockEntity entity.Course = entity.Course{
 					CourseSectionID: uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a7"),
 					Title:           "Mock Lesson 2",
 					VideoURL:        "https://www.youtuber.com",
-					CreatedAt:       0,
-					UpdatedAt:       0,
+					CreatedAt:       121212,
+					UpdatedAt:       121212,
 				},
 			},
-			CreatedAt: 0,
-			UpdatedAt: 0,
+			CreatedAt: 121212,
+			UpdatedAt: 121212,
 		},
 
 		{
@@ -82,8 +82,8 @@ var MockEntity entity.Course = entity.Course{
 					CourseSectionID: uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a8"),
 					Title:           "Mock Lesson 2 1",
 					VideoURL:        "https://www.youtube.com",
-					CreatedAt:       0,
-					UpdatedAt:       0,
+					CreatedAt:       121212,
+					UpdatedAt:       121212,
 				},
 				{
 					ID:              uuid.MustParse("d60619ae-cee9-4877-8f5d-8b294fe9cd83"),
@@ -91,16 +91,16 @@ var MockEntity entity.Course = entity.Course{
 					CourseSectionID: uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a8"),
 					Title:           "Mock Lesson 2 2",
 					VideoURL:        "https://www.youtuber.com",
-					CreatedAt:       0,
-					UpdatedAt:       0,
+					CreatedAt:       121212,
+					UpdatedAt:       121212,
 				},
 			},
-			CreatedAt: 0,
-			UpdatedAt: 0,
+			CreatedAt: 121212,
+			UpdatedAt: 121212,
 		},
 	},
-	CreatedAt: 0,
-	UpdatedAt: 0,
+	CreatedAt: 121212,
+	UpdatedAt: 121212,
 }
 
 func initializeMockDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock, repository.CourseRepository) {
@@ -482,7 +482,7 @@ func TestRepository_ReadOne(t *testing.T) {
 func testReadOneSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
 
 	// Mocking the database query
-	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, created_at, updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at, s.id AS section_id, s.name AS section_name, s.course_id AS section_course_id, s.created_at, s.updated_at, l.id AS lesson_id, l.title AS lesson_title, l.video_url AS lesson_video_url, l.course_id AS lesson_course_id, l.course_section_id AS lesson_section_id, l.created_at, l.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LEFT JOIN course_sections s ON c.id = s.course_id LEFT JOIN course_lessons l ON s.id = l.course_section_id WHERE c.id = $1").
+	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at, s.id AS section_id, s.name AS section_name, s.course_id AS section_course_id, s.created_at, s.updated_at, l.id AS lesson_id, l.title AS lesson_title, l.video_url AS lesson_video_url, l.course_id AS lesson_course_id, l.course_section_id AS lesson_section_id, l.created_at, l.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LEFT JOIN course_sections s ON c.id = s.course_id LEFT JOIN course_lessons l ON s.id = l.course_section_id WHERE c.id = $1").
 		WithArgs(courseEntity.ID).
 		WillReturnRows(prepareRows(courseEntity))
 
@@ -504,53 +504,53 @@ func testReadOneSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.Cour
 
 func prepareRows(courseEntity entity.Course) *sqlmock.Rows {
 	rows := sqlmock.NewRows([]string{
-		"course_id", "name", "description", "language",
-		"tag_id", "tag_name",
-		"gallery_id", "gallery_url", "gallery_course_id",
-		"section_id", "section_name", "section_course_id",
-		"lesson_id", "lesson_title", "lesson_video_url", "lesson_course_id", "lesson_section_id",
+		"course_id", "name", "description", "language", "created_at", "updated_at",
+		"tag_id", "tag_name", "tag_created_at", "tag_updated_at",
+		"gallery_id", "gallery_url", "gallery_course_id", "gallery_created_at", "gallery_updated_at",
+		"section_id", "section_name", "section_course_id", "section_created_at", "section_updated_at",
+		"lesson_id", "lesson_title", "lesson_video_url", "lesson_course_id", "lesson_section_id", "lesson_created_at", "lesson_updated_at",
 	})
 
 	// Adding rows based on the MockEntity
 	for _, tag := range courseEntity.CourseTags {
 		rows.AddRow(
-			courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language,
-			tag.ID, tag.Name,
-			uuid.Nil, "", uuid.Nil,
-			uuid.Nil, "", uuid.Nil,
-			uuid.Nil, "", "", uuid.Nil, uuid.Nil,
+			courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language, 121212, 121212,
+			tag.ID, tag.Name, 121212, 121212,
+			uuid.Nil, "", uuid.Nil, 0, 0,
+			uuid.Nil, "", uuid.Nil, 0, 0,
+			uuid.Nil, "", "", uuid.Nil, uuid.Nil, 0, 0,
 		)
 	}
 
 	for _, gallery := range courseEntity.Gallery {
 		rows.AddRow(
-			courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language,
-			uuid.Nil, "",
-			gallery.ID, gallery.URL, gallery.CourseID,
-			uuid.Nil, "", uuid.Nil,
-			uuid.Nil, "", "", uuid.Nil, uuid.Nil,
+			courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language, 121212, 121212,
+			uuid.Nil, "", 0, 0,
+			gallery.ID, gallery.URL, gallery.CourseID, 121212, 121212,
+			uuid.Nil, "", uuid.Nil, 0, 0,
+			uuid.Nil, "", "", uuid.Nil, uuid.Nil, 0, 0,
 		)
 	}
 
 	for _, section := range courseEntity.Sections {
 		for _, lesson := range section.Lessons {
 			rows.AddRow(
-				courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language,
-				uuid.Nil, "",
-				uuid.Nil, "", uuid.Nil,
-				section.ID, section.Name, section.CourseID,
-				lesson.ID, lesson.Title, lesson.VideoURL, lesson.CourseID, lesson.CourseSectionID,
+				courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language, 121212, 121212,
+				uuid.Nil, "", 0, 0,
+				uuid.Nil, "", uuid.Nil, 0, 0,
+				section.ID, section.Name, section.CourseID, 121212, 121212,
+				lesson.ID, lesson.Title, lesson.VideoURL, lesson.CourseID, lesson.CourseSectionID, 121212, 121212,
 			)
 		}
 	}
 
-	//This Additional Row is used to test the case on readOneScan when the lesson is same
+	// //This Additional Row is used to test the case on readOneScan when the lesson is same
 	rows.AddRow(
-		courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language,
-		uuid.Nil, "",
-		uuid.Nil, "", uuid.Nil,
-		"b2b71fda-f0f2-4358-9722-b3f13c4564a7", "Mock Section", "18a95d2f-a941-4a64-bbe5-256be7626db2",
-		"d60619ae-cee9-4877-8f5d-8b294fe9cd80", "Mock Lesson", "https://www.youtube.com", "18a95d2f-a941-4a64-bbe5-256be7626db2", "b2b71fda-f0f2-4358-9722-b3f13c4564a7",
+		courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language, 121212, 121212,
+		uuid.Nil, "", 0, 0,
+		uuid.Nil, "", uuid.Nil, 0, 0,
+		"b2b71fda-f0f2-4358-9722-b3f13c4564a7", "Mock Section", "18a95d2f-a941-4a64-bbe5-256be7626db2", 121212, 121212,
+		"d60619ae-cee9-4877-8f5d-8b294fe9cd80", "Mock Lesson", "https://www.youtube.com", "18a95d2f-a941-4a64-bbe5-256be7626db2", "b2b71fda-f0f2-4358-9722-b3f13c4564a7", 121212, 121212,
 	)
 
 	return rows
