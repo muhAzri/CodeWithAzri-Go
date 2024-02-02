@@ -39,10 +39,10 @@ func (r *Repository) Create(course entity.Course) error {
 	}()
 
 	courseQuery := `
-		INSERT INTO courses (id, name, description, language) 
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO courses (id, name, description, language, created_at, updated_at)  
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
-	_, err = tx.Exec(courseQuery, course.ID, course.Name, course.Description, course.Language)
+	_, err = tx.Exec(courseQuery, course.ID, course.Name, course.Description, course.Language, course.CreatedAt, course.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create course: %v", err)
 	}
@@ -60,10 +60,10 @@ func (r *Repository) Create(course entity.Course) error {
 
 	for _, galleryItem := range course.Gallery {
 		galleryQuery := `
-			INSERT INTO course_galleries (id, course_id, url) 
-			VALUES ($1, $2, $3)
+			INSERT INTO course_galleries (id, course_id, url, created_at, updated_at)  
+			VALUES ($1, $2, $3, $4, $5)
 		`
-		_, err = tx.Exec(galleryQuery, galleryItem.ID, course.ID, galleryItem.URL)
+		_, err = tx.Exec(galleryQuery, galleryItem.ID, course.ID, galleryItem.URL, galleryItem.CreatedAt, galleryItem.UpdatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to create gallery item: %v", err)
 		}
@@ -71,20 +71,20 @@ func (r *Repository) Create(course entity.Course) error {
 
 	for _, section := range course.Sections {
 		sectionQuery := `
-			INSERT INTO course_sections (id, course_id, name) 
-			VALUES ($1, $2, $3)
+			INSERT INTO course_sections (id, course_id, name, created_at, updated_at)   
+			VALUES ($1, $2, $3, $4, $5)
 		`
-		_, err = tx.Exec(sectionQuery, section.ID, course.ID, section.Name)
+		_, err = tx.Exec(sectionQuery, section.ID, course.ID, section.Name, section.CreatedAt, section.UpdatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to create section: %v", err)
 		}
 
 		for _, lesson := range section.Lessons {
 			lessonQuery := `
-				INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url) 
-				VALUES ($1, $2, $3, $4, $5)
+				INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url, created_at, updated_at) 
+				VALUES ($1, $2, $3, $4, $5, $6, $7)
 			`
-			_, err = tx.Exec(lessonQuery, lesson.ID, course.ID, section.ID, lesson.Title, lesson.VideoURL)
+			_, err = tx.Exec(lessonQuery, lesson.ID, course.ID, section.ID, lesson.Title, lesson.VideoURL, lesson.CreatedAt, lesson.UpdatedAt)
 			if err != nil {
 				return fmt.Errorf("failed to create lesson: %v", err)
 			}
