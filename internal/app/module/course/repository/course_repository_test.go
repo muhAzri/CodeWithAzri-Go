@@ -5,6 +5,7 @@ import (
 	"CodeWithAzri/internal/app/module/course/repository"
 	"database/sql"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -109,6 +110,19 @@ func TestRepository_Create(t *testing.T) {
 
 	//Failed to link Course Tag
 	testLinkCourseToTagErrorHandling(t, mock, repo, courseEntity)
+
+	//Failed To Create Gallery
+	testCreateGalleryItemErrorHandling(t, mock, repo, courseEntity)
+
+	// Test the error handling during creating section
+	testCreateSectionErrorHandling(t, mock, repo, courseEntity)
+
+	// Test the error handling during creating lesson
+	testCreateLessonErrorHandling(t, mock, repo, courseEntity)
+
+	// Test the error handling during committing the transaction
+	testCreateCommitErrorHandling(t, mock, repo, courseEntity)
+
 }
 
 func testCreateSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
@@ -238,6 +252,198 @@ func testLinkCourseToTagErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo r
 
 	assert.Error(t, err)
 	assert.EqualError(t, err, "failed to link course to tag: some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateGalleryItemErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
+		WithArgs(
+			courseEntity.ID,
+			courseEntity.Name,
+			courseEntity.Description,
+			courseEntity.Language,
+			courseEntity.CreatedAt,
+			courseEntity.UpdatedAt,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec("INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)").
+			WithArgs(courseEntity.ID, tag.ID).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	mock.ExpectExec("INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)").
+		WithArgs(
+			courseEntity.Gallery[0].ID,
+			courseEntity.ID,
+			courseEntity.Gallery[0].URL,
+			courseEntity.Gallery[0].CreatedAt,
+			courseEntity.Gallery[0].UpdatedAt,
+		).
+		WillReturnError(errors.New("some error"))
+
+	err := repo.Create(courseEntity)
+
+	fmt.Println(err.Error())
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to create gallery item: some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateSectionErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	// Expectations for the transaction
+	mock.ExpectBegin()
+
+	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
+		WithArgs(
+			courseEntity.ID,
+			courseEntity.Name,
+			courseEntity.Description,
+			courseEntity.Language,
+			courseEntity.CreatedAt,
+			courseEntity.UpdatedAt,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec("INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)").
+			WithArgs(courseEntity.ID, tag.ID).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	for _, galleryItem := range courseEntity.Gallery {
+		mock.ExpectExec("INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)").
+			WithArgs(galleryItem.ID, courseEntity.ID, galleryItem.URL, galleryItem.CreatedAt, galleryItem.UpdatedAt).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	// Simulate an error during creating section
+	mock.ExpectExec("INSERT INTO course_sections (id, course_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)").
+		WithArgs(
+			courseEntity.Sections[0].ID,
+			courseEntity.ID,
+			courseEntity.Sections[0].Name,
+			courseEntity.Sections[0].CreatedAt,
+			courseEntity.Sections[0].UpdatedAt,
+		).
+		WillReturnError(errors.New("section error"))
+
+	// Call the method being tested
+	err := repo.Create(courseEntity)
+
+	// Check if there was an error during the execution
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to create section: section error")
+
+	// Ensure the expectations were met
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateLessonErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
+		WithArgs(
+			courseEntity.ID,
+			courseEntity.Name,
+			courseEntity.Description,
+			courseEntity.Language,
+			courseEntity.CreatedAt,
+			courseEntity.UpdatedAt,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec("INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)").
+			WithArgs(courseEntity.ID, tag.ID).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	for _, galleryItem := range courseEntity.Gallery {
+		mock.ExpectExec("INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)").
+			WithArgs(galleryItem.ID, courseEntity.ID, galleryItem.URL, galleryItem.CreatedAt, galleryItem.UpdatedAt).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	mock.ExpectExec("INSERT INTO course_sections (id, course_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)").
+		WithArgs(
+			courseEntity.Sections[0].ID,
+			courseEntity.ID,
+			courseEntity.Sections[0].Name,
+			courseEntity.Sections[0].CreatedAt,
+			courseEntity.Sections[0].UpdatedAt,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec("INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)").
+		WithArgs(
+			courseEntity.Sections[0].Lessons[0].ID,
+			courseEntity.ID,
+			courseEntity.Sections[0].ID,
+			courseEntity.Sections[0].Lessons[0].Title,
+			courseEntity.Sections[0].Lessons[0].VideoURL,
+			courseEntity.Sections[0].Lessons[0].CreatedAt,
+			courseEntity.Sections[0].Lessons[0].UpdatedAt,
+		).
+		WillReturnError(errors.New("lesson error"))
+	err := repo.Create(courseEntity)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to create lesson: lesson error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateCommitErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
+		WithArgs(
+			courseEntity.ID,
+			courseEntity.Name,
+			courseEntity.Description,
+			courseEntity.Language,
+			courseEntity.CreatedAt,
+			courseEntity.UpdatedAt,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec("INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)").
+			WithArgs(courseEntity.ID, tag.ID).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	for _, galleryItem := range courseEntity.Gallery {
+		mock.ExpectExec("INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)").
+			WithArgs(galleryItem.ID, courseEntity.ID, galleryItem.URL, galleryItem.CreatedAt, galleryItem.UpdatedAt).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	for _, section := range courseEntity.Sections {
+		mock.ExpectExec("INSERT INTO course_sections (id, course_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)").
+			WithArgs(section.ID, courseEntity.ID, section.Name, section.CreatedAt, section.UpdatedAt).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+
+		for _, lesson := range section.Lessons {
+			mock.ExpectExec("INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)").
+				WithArgs(lesson.ID, courseEntity.ID, section.ID, lesson.Title, lesson.VideoURL, lesson.CreatedAt, lesson.UpdatedAt).
+				WillReturnResult(sqlmock.NewResult(0, 1))
+		}
+	}
+
+	mock.ExpectCommit().WillReturnError(errors.New("commit error"))
+
+	err := repo.Create(courseEntity)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to commit transaction: commit error")
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
