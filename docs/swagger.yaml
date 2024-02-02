@@ -1,5 +1,87 @@
 basePath: /api/v1
 definitions:
+  dto.CourseDTO:
+    properties:
+      description:
+        type: string
+      gallery:
+        items:
+          $ref: '#/definitions/dto.CourseGalleryDTO'
+        type: array
+      id:
+        type: string
+      language:
+        $ref: '#/definitions/language_enum.Language'
+      name:
+        type: string
+      reviews:
+        items:
+          $ref: '#/definitions/dto.CourseReviewsDTO'
+        type: array
+      sections:
+        items:
+          $ref: '#/definitions/dto.CourseSectionDTO'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/dto.CourseTagsDTO'
+        type: array
+    type: object
+  dto.CourseGalleryDTO:
+    properties:
+      course_id:
+        type: string
+      id:
+        type: string
+      url:
+        type: string
+    type: object
+  dto.CourseLessonDTO:
+    properties:
+      course_id:
+        type: string
+      course_section_id:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+      video_url:
+        type: string
+    type: object
+  dto.CourseReviewsDTO:
+    properties:
+      comment:
+        type: string
+      course_id:
+        type: string
+      id:
+        type: string
+      user_id:
+        type: string
+      value:
+        type: integer
+    type: object
+  dto.CourseSectionDTO:
+    properties:
+      course_id:
+        type: string
+      id:
+        type: string
+      lessons:
+        items:
+          $ref: '#/definitions/dto.CourseLessonDTO'
+        type: array
+      name:
+        type: string
+    type: object
+  dto.CourseTagsDTO:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   dto.CreateUpdateDto:
     properties:
       email:
@@ -39,6 +121,14 @@ definitions:
       profilePicture:
         type: string
     type: object
+  language_enum.Language:
+    enum:
+    - id
+    - en
+    type: string
+    x-enum-varnames:
+    - Indonesian
+    - English
   response.Meta:
     properties:
       code:
@@ -72,6 +162,109 @@ info:
   title: CodeWithAzri API
   version: "1.0"
 paths:
+  /api/v1/courses:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of courses based on the specified page
+        and limit parameters.
+      operationId: get-paginated-courses
+      parameters:
+      - description: 'Page number for pagination (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response with paginated courses
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.CourseDTO'
+                  type: array
+              type: object
+        "400":
+          description: Bad request, invalid input
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "401":
+          description: Unauthorized, missing or invalid authentication token
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+      security:
+      - Bearer: []
+      summary: Get paginated list of courses
+      tags:
+      - Course
+  /api/v1/courses/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Create a new course if it does not exist or fetch the existing
+        course based on the provided ID.
+      operationId: create-or-fetch-course
+      parameters:
+      - description: Course ID for creation or fetching
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response with course details
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CourseDTO'
+              type: object
+        "400":
+          description: Bad request, invalid input
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "401":
+          description: Unauthorized, missing or invalid authentication token
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "404":
+          description: Course not found
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+      security:
+      - Bearer: []
+      summary: Create or fetch course details
+      tags:
+      - Course
   /api/v1/users:
     post:
       consumes:

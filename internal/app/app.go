@@ -67,15 +67,17 @@ func (a *App) initMiddlewares() {
 }
 
 func (a *App) initModuleRouters() {
-	http.Handle("/swagger/", http.StripPrefix("/swagger/", httpSwagger.Handler(
-		httpSwagger.URL("/swagger/doc.json"),
-	)))
+	// http.Handle("/swagger/", http.StripPrefix("/swagger/", httpSwagger.Handler(
+	// 	httpSwagger.URL("/swagger/doc.json"),
+	// )))
 
 	m := a.Middlewares[0].(*middleware.FirebaseMiddleware)
 
-	a.Router.RegisterGlobalMiddlewares(m)
-	router.RegisterUserRoutes(a.Router, constant.V1, a.UserModule)
-	router.RegisterCourseRoutes(a.Router, constant.V1, a.CourseModule)
+	router.RegisterUserRoutes(a.Router, constant.V1, a.UserModule, m)
+	router.RegisterCourseRoutes(a.Router, constant.V1, a.CourseModule, m)
+	a.Router.Mux.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 }
 
