@@ -101,11 +101,11 @@ func (r *Repository) Create(course entity.Course) error {
 
 func (r *Repository) ReadOne(id uuid.UUID) (entity.Course, error) {
 	courseQuery := `
-    SELECT c.id AS course_id, c.name, c.description, c.language,
-           t.id AS tag_id, t.name AS tag_name,
-           g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id,
-           s.id AS section_id, s.name AS section_name, s.course_id AS section_course_id,
-           l.id AS lesson_id, l.title AS lesson_title, l.video_url AS lesson_video_url, l.course_id AS lesson_course_id, l.course_section_id AS lesson_section_id
+    SELECT c.id AS course_id, c.name, c.description, c.language, created_at, updated_at,
+           t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at,
+           g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at,
+           s.id AS section_id, s.name AS section_name, s.course_id AS section_course_id, s.created_at, s.updated_at,
+           l.id AS lesson_id, l.title AS lesson_title, l.video_url AS lesson_video_url, l.course_id AS lesson_course_id, l.course_section_id AS lesson_section_id, l.created_at, l.updated_at
     FROM courses c
 		LEFT JOIN course_tags_courses tc ON c.id = tc.course_id
 		LEFT JOIN course_tags t ON tc.course_tags_id = t.id
