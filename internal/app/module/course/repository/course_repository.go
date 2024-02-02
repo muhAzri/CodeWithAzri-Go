@@ -100,8 +100,6 @@ func (r *Repository) Create(course entity.Course) error {
 }
 
 func (r *Repository) ReadOne(id uuid.UUID) (entity.Course, error) {
-	var course entity.Course
-
 	courseQuery := `
     SELECT c.id AS course_id, c.name, c.description, c.language,
            t.id AS tag_id, t.name AS tag_name,
@@ -123,84 +121,9 @@ func (r *Repository) ReadOne(id uuid.UUID) (entity.Course, error) {
 	}
 	defer rows.Close()
 
-	var currentCourseID uuid.UUID
-	var (
-		tagMap     = make(map[uuid.UUID]struct{})
-		galleryMap = make(map[uuid.UUID]struct{})
-		sectionMap = make(map[uuid.UUID]struct{})
-	)
-
-	for rows.Next() {
-		var tag entity.CourseTags
-		var gallery entity.CourseGallery
-		var section entity.CourseSection
-		var lesson entity.CourseLesson
-
-		err := rows.Scan(&course.ID, &course.Name, &course.Description, &course.Language,
-			&tag.ID, &tag.Name,
-			&gallery.ID, &gallery.URL, &gallery.CourseID,
-			&section.ID, &section.Name, &section.CourseID,
-			&lesson.ID, &lesson.Title, &lesson.VideoURL, &lesson.CourseID, &lesson.CourseSectionID,
-		)
-		if err != nil {
-			fmt.Println(err.Error())
-			return entity.Course{}, fmt.Errorf("failed to scan course: %v", err)
-		}
-
-		if currentCourseID != course.ID {
-			currentCourseID = course.ID
-			course.CourseTags = nil
-			course.Gallery = nil
-			course.Sections = nil
-			tagMap = make(map[uuid.UUID]struct{})
-			galleryMap = make(map[uuid.UUID]struct{})
-			sectionMap = make(map[uuid.UUID]struct{})
-		}
-
-		if tag.ID != uuid.Nil {
-			if _, ok := tagMap[tag.ID]; !ok {
-				tagMap[tag.ID] = struct{}{}
-				course.CourseTags = append(course.CourseTags, tag)
-			}
-		}
-
-		if gallery.ID != uuid.Nil {
-			if _, ok := galleryMap[gallery.ID]; !ok {
-				galleryMap[gallery.ID] = struct{}{}
-				course.Gallery = append(course.Gallery, gallery)
-			}
-		}
-
-		if section.ID != uuid.Nil {
-			if _, ok := sectionMap[section.ID]; !ok {
-				sectionMap[section.ID] = struct{}{}
-				currentSection := entity.CourseSection{
-					ID:       section.ID,
-					Name:     section.Name,
-					CourseID: section.CourseID,
-					Lessons:  []entity.CourseLesson{lesson},
-				}
-
-				course.Sections = append(course.Sections, currentSection)
-			} else {
-				// Check if the lesson with the same ID already exists in the section
-				lessonExists := false
-				for i, existingSection := range course.Sections {
-					if existingSection.ID == section.ID {
-						for _, existingLesson := range existingSection.Lessons {
-							if existingLesson.ID == lesson.ID {
-								lessonExists = true
-								break
-							}
-						}
-						if !lessonExists {
-							course.Sections[i].Lessons = append(course.Sections[i].Lessons, lesson)
-						}
-						break
-					}
-				}
-			}
-		}
+	course, err := scanReadOne(rows)
+	if err != nil {
+		return entity.Course{}, fmt.Errorf("failed to scan course: %v", err)
 	}
 
 	return course, nil
@@ -442,4 +365,88 @@ func (r *Repository) Delete(id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func scanReadOne(rows *sql.Rows) (entity.Course, error) {
+	var course entity.Course
+
+	var currentCourseID uuid.UUID
+	var (
+		tagMap     = make(map[uuid.UUID]struct{})
+		galleryMap = make(map[uuid.UUID]struct{})
+		sectionMap = make(map[uuid.UUID]struct{})
+	)
+
+	for rows.Next() {
+		var tag entity.CourseTags
+		var gallery entity.CourseGallery
+		var section entity.CourseSection
+		var lesson entity.CourseLesson
+
+		err := rows.Scan(&course.ID, &course.Name, &course.Description, &course.Language,
+			&tag.ID, &tag.Name,
+			&gallery.ID, &gallery.URL, &gallery.CourseID,
+			&section.ID, &section.Name, &section.CourseID,
+			&lesson.ID, &lesson.Title, &lesson.VideoURL, &lesson.CourseID, &lesson.CourseSectionID,
+		)
+		if err != nil {
+			return entity.Course{}, err
+		}
+
+		if currentCourseID != course.ID {
+			currentCourseID = course.ID
+			course.CourseTags = nil
+			course.Gallery = nil
+			course.Sections = nil
+			tagMap = make(map[uuid.UUID]struct{})
+			galleryMap = make(map[uuid.UUID]struct{})
+			sectionMap = make(map[uuid.UUID]struct{})
+		}
+
+		if tag.ID != uuid.Nil {
+			if _, ok := tagMap[tag.ID]; !ok {
+				tagMap[tag.ID] = struct{}{}
+				course.CourseTags = append(course.CourseTags, tag)
+			}
+		}
+
+		if gallery.ID != uuid.Nil {
+			if _, ok := galleryMap[gallery.ID]; !ok {
+				galleryMap[gallery.ID] = struct{}{}
+				course.Gallery = append(course.Gallery, gallery)
+			}
+		}
+
+		if section.ID != uuid.Nil {
+			if _, ok := sectionMap[section.ID]; !ok {
+				sectionMap[section.ID] = struct{}{}
+				currentSection := entity.CourseSection{
+					ID:       section.ID,
+					Name:     section.Name,
+					CourseID: section.CourseID,
+					Lessons:  []entity.CourseLesson{lesson},
+				}
+
+				course.Sections = append(course.Sections, currentSection)
+			} else {
+				lessonExists := false
+				for i, existingSection := range course.Sections {
+					if existingSection.ID == section.ID {
+						for _, existingLesson := range existingSection.Lessons {
+							if existingLesson.ID == lesson.ID {
+								lessonExists = true
+								break
+							}
+						}
+						if !lessonExists {
+							course.Sections[i].Lessons = append(course.Sections[i].Lessons, lesson)
+						}
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return course, nil
 }
