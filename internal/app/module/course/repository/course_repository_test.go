@@ -4,6 +4,7 @@ import (
 	"CodeWithAzri/internal/app/module/course/entity"
 	"CodeWithAzri/internal/app/module/course/repository"
 	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -94,6 +95,17 @@ func TestRepository_Create(t *testing.T) {
 
 	courseEntity := MockEntity
 
+	//Success
+	testCreateSuccess(t, mock, repo, courseEntity)
+
+	//Failed DB Tx Error
+	testCreateTransactionErrorHandling(t, mock, repo, courseEntity)
+
+	//Failed DB then Rollback Error
+	testCreateRollbackHandling(t, mock, repo, courseEntity)
+}
+
+func testCreateSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
 	mock.ExpectBegin()
 
 	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
@@ -136,5 +148,42 @@ func TestRepository_Create(t *testing.T) {
 	err := repo.Create(courseEntity)
 
 	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateTransactionErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin().WillReturnError(errors.New("some error"))
+
+	err := repo.Create(courseEntity)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to begin transaction: some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateRollbackHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
+		WithArgs(
+			courseEntity.ID,
+			courseEntity.Name,
+			courseEntity.Description,
+			courseEntity.Language,
+			courseEntity.CreatedAt,
+			courseEntity.UpdatedAt,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec("INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)").
+		WithArgs(courseEntity.ID, courseEntity.CourseTags[0].ID).
+		WillReturnError(errors.New("some error"))
+
+	err := repo.Create(courseEntity)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to link course to tag: some error")
+
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
