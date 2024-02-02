@@ -5,7 +5,6 @@ import (
 	"CodeWithAzri/internal/app/module/course/repository"
 	"database/sql"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -15,12 +14,16 @@ import (
 
 var mockTags []entity.CourseTags = []entity.CourseTags{
 	{
-		ID:   uuid.MustParse("345c2c39-5a19-4842-bab8-072a53cd020b"),
-		Name: "Mock Tag",
+		ID:        uuid.MustParse("345c2c39-5a19-4842-bab8-072a53cd020b"),
+		Name:      "Mock Tag",
+		CreatedAt: 0,
+		UpdatedAt: 0,
 	},
 	{
-		ID:   uuid.MustParse("7ccb15a4-483d-4b65-88f8-f2c6d2de3460"),
-		Name: "Mock Tag 2",
+		ID:        uuid.MustParse("7ccb15a4-483d-4b65-88f8-f2c6d2de3460"),
+		Name:      "Mock Tag 2",
+		CreatedAt: 0,
+		UpdatedAt: 0,
 	},
 }
 
@@ -35,15 +38,8 @@ var MockEntity entity.Course = entity.Course{
 			ID:        uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a5"),
 			CourseID:  uuid.MustParse("18a95d2f-a941-4a64-bbe5-256be7626db2"),
 			URL:       "https://www.google.com",
-			CreatedAt: 121212,
-			UpdatedAt: 121212,
-		},
-		{
-			ID:        uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a6"),
-			CourseID:  uuid.MustParse("18a95d2f-a941-4a64-bbe5-256be7626db2"),
-			URL:       "https://www.yahoo.com",
-			CreatedAt: 121212,
-			UpdatedAt: 121212,
+			CreatedAt: 0,
+			UpdatedAt: 0,
 		},
 	},
 	Sections: []entity.CourseSection{
@@ -58,25 +54,16 @@ var MockEntity entity.Course = entity.Course{
 					CourseSectionID: uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a7"),
 					Title:           "Mock Lesson",
 					VideoURL:        "https://www.youtube.com",
-					CreatedAt:       121212,
-					UpdatedAt:       121212,
-				},
-				{
-					ID:              uuid.MustParse("61467da5-d1b9-4fd2-bc53-1f86842ecf77"),
-					CourseID:        uuid.MustParse("18a95d2f-a941-4a64-bbe5-256be7626db2"),
-					CourseSectionID: uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a7"),
-					Title:           "Mock Lesson 2",
-					VideoURL:        "https://www.youtube.com",
-					CreatedAt:       121212,
-					UpdatedAt:       121212,
+					CreatedAt:       0,
+					UpdatedAt:       0,
 				},
 			},
-			CreatedAt: 121212,
-			UpdatedAt: 121212,
+			CreatedAt: 0,
+			UpdatedAt: 0,
 		},
 	},
-	CreatedAt: 121212,
-	UpdatedAt: 121212,
+	CreatedAt: 0,
+	UpdatedAt: 0,
 }
 
 func initializeMockDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock, repository.CourseRepository) {
@@ -288,8 +275,6 @@ func testCreateGalleryItemErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo
 
 	err := repo.Create(courseEntity)
 
-	fmt.Println(err.Error())
-
 	assert.Error(t, err)
 	assert.EqualError(t, err, "failed to create gallery item: some error")
 
@@ -446,4 +431,80 @@ func testCreateCommitErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo repo
 	assert.EqualError(t, err, "failed to commit transaction: commit error")
 
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRepository_ReadOne(t *testing.T) {
+	db, mock, repo := initializeMockDB(t)
+	defer db.Close()
+
+	courseEntity := MockEntity
+
+	testReadOneSuccess(t, mock, repo, courseEntity)
+}
+
+func testReadOneSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	// Mocking the database query
+	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, created_at, updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at, s.id AS section_id, s.name AS section_name, s.course_id AS section_course_id, s.created_at, s.updated_at, l.id AS lesson_id, l.title AS lesson_title, l.video_url AS lesson_video_url, l.course_id AS lesson_course_id, l.course_section_id AS lesson_section_id, l.created_at, l.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LEFT JOIN course_sections s ON c.id = s.course_id LEFT JOIN course_lessons l ON s.id = l.course_section_id WHERE c.id = $1").
+		WithArgs(courseEntity.ID).
+		WillReturnRows(prepareRows(courseEntity))
+
+	// Calling the ReadOne method
+	result, err := repo.ReadOne(courseEntity.ID)
+	if err != nil {
+		t.Fatalf("Error while calling ReadOne: %v", err)
+	}
+
+	// Asserting the result
+	assert.Equal(t, courseEntity, result)
+
+	// Checking if all expectations were met
+	err = mock.ExpectationsWereMet()
+	if err != nil {
+		t.Fatalf("Expectations not met: %v", err)
+	}
+}
+
+func prepareRows(courseEntity entity.Course) *sqlmock.Rows {
+	rows := sqlmock.NewRows([]string{
+		"course_id", "name", "description", "language",
+		"tag_id", "tag_name",
+		"gallery_id", "gallery_url", "gallery_course_id",
+		"section_id", "section_name", "section_course_id",
+		"lesson_id", "lesson_title", "lesson_video_url", "lesson_course_id", "lesson_section_id",
+	})
+
+	// Adding rows based on the MockEntity
+	for _, tag := range courseEntity.CourseTags {
+		rows.AddRow(
+			courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language,
+			tag.ID, tag.Name,
+			uuid.Nil, "", uuid.Nil,
+			uuid.Nil, "", uuid.Nil,
+			uuid.Nil, "", "", uuid.Nil, uuid.Nil,
+		)
+	}
+
+	for _, gallery := range courseEntity.Gallery {
+		rows.AddRow(
+			courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language,
+			uuid.Nil, "",
+			gallery.ID, gallery.URL, gallery.CourseID,
+			uuid.Nil, "", uuid.Nil,
+			uuid.Nil, "", "", uuid.Nil, uuid.Nil,
+		)
+	}
+
+	for _, section := range courseEntity.Sections {
+		for _, lesson := range section.Lessons {
+			rows.AddRow(
+				courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language,
+				uuid.Nil, "",
+				uuid.Nil, "", uuid.Nil,
+				section.ID, section.Name, section.CourseID,
+				lesson.ID, lesson.Title, lesson.VideoURL, lesson.CourseID, lesson.CourseSectionID,
+			)
+		}
+	}
+
+	return rows
 }
