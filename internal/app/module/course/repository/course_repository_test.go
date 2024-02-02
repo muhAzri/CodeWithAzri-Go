@@ -103,6 +103,12 @@ func TestRepository_Create(t *testing.T) {
 
 	//Failed DB then Rollback Error
 	testCreateRollbackHandling(t, mock, repo, courseEntity)
+
+	//Failed Insert Course
+	testCourseInsertErrorHandling(t, mock, repo, courseEntity)
+
+	//Failed to link Course Tag
+	testLinkCourseToTagErrorHandling(t, mock, repo, courseEntity)
 }
 
 func testCreateSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
@@ -163,6 +169,54 @@ func testCreateTransactionErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo
 }
 
 func testCreateRollbackHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
+		WithArgs(
+			courseEntity.ID,
+			courseEntity.Name,
+			courseEntity.Description,
+			courseEntity.Language,
+			courseEntity.CreatedAt,
+			courseEntity.UpdatedAt,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec("INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)").
+		WithArgs(courseEntity.ID, courseEntity.CourseTags[0].ID).
+		WillReturnError(errors.New("some error"))
+
+	err := repo.Create(courseEntity)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to link course to tag: some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCourseInsertErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
+		WithArgs(
+			courseEntity.ID,
+			courseEntity.Name,
+			courseEntity.Description,
+			courseEntity.Language,
+			courseEntity.CreatedAt,
+			courseEntity.UpdatedAt,
+		).
+		WillReturnError(errors.New("some error"))
+
+	err := repo.Create(courseEntity)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to create course: some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testLinkCourseToTagErrorHandling(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
 	mock.ExpectBegin()
 
 	mock.ExpectExec("INSERT INTO courses (id, name, description, language, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
