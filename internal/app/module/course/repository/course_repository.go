@@ -130,25 +130,6 @@ func (r *Repository) ReadOne(id uuid.UUID) (entity.Course, error) {
 }
 
 func (r *Repository) ReadMany(limit, offset int) ([]entity.Course, error) {
-	var coursesMap = make(map[uuid.UUID]*entity.Course)
-
-	tagExists := func(tags []entity.CourseTags, tagID uuid.UUID) bool {
-		for _, tag := range tags {
-			if tag.ID == tagID {
-				return true
-			}
-		}
-		return false
-	}
-
-	galleryExists := func(galleries []entity.CourseGallery, galleryID uuid.UUID) bool {
-		for _, gallery := range galleries {
-			if gallery.ID == galleryID {
-				return true
-			}
-		}
-		return false
-	}
 
 	coursesQuery := `
 		SELECT c.id AS course_id, c.name, c.description, c.language,
@@ -167,38 +148,9 @@ func (r *Repository) ReadMany(limit, offset int) ([]entity.Course, error) {
 	}
 	defer rows.Close()
 
-	for rows.Next() {
-		var courseID, tagID, galleryID, galleryCourseID uuid.UUID
-		var courseName, courseDescription, courseLanguage, tagName, galleryURL sql.NullString
-
-		err := rows.Scan(&courseID, &courseName, &courseDescription, &courseLanguage, &tagID, &tagName, &galleryID, &galleryURL, &galleryCourseID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan row: %v", err)
-		}
-
-		if _, ok := coursesMap[courseID]; !ok {
-			coursesMap[courseID] = &entity.Course{
-				ID:          courseID,
-				Name:        courseName.String,
-				Description: courseDescription.String,
-				Language:    language_enum.Language(courseLanguage.String),
-			}
-		}
-
-		if tagID != uuid.Nil && tagName.Valid && !tagExists(coursesMap[courseID].CourseTags, tagID) {
-			coursesMap[courseID].CourseTags = append(coursesMap[courseID].CourseTags, entity.CourseTags{
-				ID:   tagID,
-				Name: tagName.String,
-			})
-		}
-
-		if galleryID != uuid.Nil && galleryURL.Valid && galleryCourseID != uuid.Nil && !galleryExists(coursesMap[courseID].Gallery, galleryID) {
-			coursesMap[courseID].Gallery = append(coursesMap[courseID].Gallery, entity.CourseGallery{
-				ID:       galleryID,
-				CourseID: galleryCourseID,
-				URL:      galleryURL.String,
-			})
-		}
+	coursesMap, err := scanReadMany(rows)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan courses: %v", err)
 	}
 
 	var courses []entity.Course
@@ -449,4 +401,62 @@ func scanReadOne(rows *sql.Rows) (entity.Course, error) {
 	}
 
 	return course, nil
+}
+
+func scanReadMany(rows *sql.Rows) (map[uuid.UUID]*entity.Course, error) {
+	var coursesMap = make(map[uuid.UUID]*entity.Course)
+
+	for rows.Next() {
+		var courseID, tagID, galleryID, galleryCourseID uuid.UUID
+		var courseName, courseDescription, courseLanguage, tagName, galleryURL sql.NullString
+
+		err := rows.Scan(&courseID, &courseName, &courseDescription, &courseLanguage, &tagID, &tagName, &galleryID, &galleryURL, &galleryCourseID)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := coursesMap[courseID]; !ok {
+			coursesMap[courseID] = &entity.Course{
+				ID:          courseID,
+				Name:        courseName.String,
+				Description: courseDescription.String,
+				Language:    language_enum.Language(courseLanguage.String),
+			}
+		}
+
+		if tagID != uuid.Nil && tagName.Valid && !tagExists(coursesMap[courseID].CourseTags, tagID) {
+			coursesMap[courseID].CourseTags = append(coursesMap[courseID].CourseTags, entity.CourseTags{
+				ID:   tagID,
+				Name: tagName.String,
+			})
+		}
+
+		if galleryID != uuid.Nil && galleryURL.Valid && galleryCourseID != uuid.Nil && !galleryExists(coursesMap[courseID].Gallery, galleryID) {
+			coursesMap[courseID].Gallery = append(coursesMap[courseID].Gallery, entity.CourseGallery{
+				ID:       galleryID,
+				CourseID: galleryCourseID,
+				URL:      galleryURL.String,
+			})
+		}
+	}
+
+	return coursesMap, nil
+}
+
+func tagExists(tags []entity.CourseTags, tagID uuid.UUID) bool {
+	for _, tag := range tags {
+		if tag.ID == tagID {
+			return true
+		}
+	}
+	return false
+}
+
+func galleryExists(galleries []entity.CourseGallery, galleryID uuid.UUID) bool {
+	for _, gallery := range galleries {
+		if gallery.ID == galleryID {
+			return true
+		}
+	}
+	return false
 }
