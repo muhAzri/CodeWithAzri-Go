@@ -6,6 +6,7 @@ import (
 	"CodeWithAzri/internal/app/module/course/service/mocks"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -145,6 +146,25 @@ func TestHandler_GetPaginatedCourses(t *testing.T) {
 		courseHandler.GetPaginatedCourses(recorder, req)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
+
+	})
+
+}
+
+func TestHandler_GetPaginatedCourses_ServiceError(t *testing.T) {
+	courseHandler, mockService := initializeHandler(t)
+
+	t.Run("Get Paginated Courses Successfully", func(t *testing.T) {
+		mockService.On("GetPaginatedCourses", mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(MockArrayCourseDTO, fmt.Errorf("Internal Server Error"))
+
+		req, err := http.NewRequest("GET", "/courses?page=1&limit=10", nil)
+		assert.NoError(t, err)
+
+		recorder := httptest.NewRecorder()
+
+		courseHandler.GetPaginatedCourses(recorder, req)
+
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 
 	})
 
