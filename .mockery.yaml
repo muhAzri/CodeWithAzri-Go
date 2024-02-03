@@ -11,5 +11,9 @@ packages:
     CodeWithAzri/internal/app/module/user/service:
         interfaces:
             UserService:
-    CodeWithAzri/pkg/adapter:
-       
+    CodeWithAzri/internal/app/module/course/repository:
+        interfaces:
+            CourseRepository:
+    CodeWithAzri/internal/app/module/course/service:
+        interfaces:
+            CourseService:

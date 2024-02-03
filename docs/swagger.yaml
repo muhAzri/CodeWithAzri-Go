@@ -1,0 +1,354 @@
+basePath: /api/v1
+definitions:
+  dto.CourseDTO:
+    properties:
+      description:
+        type: string
+      gallery:
+        items:
+          $ref: '#/definitions/dto.CourseGalleryDTO'
+        type: array
+      id:
+        type: string
+      language:
+        $ref: '#/definitions/language_enum.Language'
+      name:
+        type: string
+      reviews:
+        items:
+          $ref: '#/definitions/dto.CourseReviewsDTO'
+        type: array
+      sections:
+        items:
+          $ref: '#/definitions/dto.CourseSectionDTO'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/dto.CourseTagsDTO'
+        type: array
+    type: object
+  dto.CourseGalleryDTO:
+    properties:
+      course_id:
+        type: string
+      id:
+        type: string
+      url:
+        type: string
+    type: object
+  dto.CourseLessonDTO:
+    properties:
+      course_id:
+        type: string
+      course_section_id:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+      video_url:
+        type: string
+    type: object
+  dto.CourseReviewsDTO:
+    properties:
+      comment:
+        type: string
+      course_id:
+        type: string
+      id:
+        type: string
+      user_id:
+        type: string
+      value:
+        type: integer
+    type: object
+  dto.CourseSectionDTO:
+    properties:
+      course_id:
+        type: string
+      id:
+        type: string
+      lessons:
+        items:
+          $ref: '#/definitions/dto.CourseLessonDTO'
+        type: array
+      name:
+        type: string
+    type: object
+  dto.CourseTagsDTO:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  dto.CreateUpdateDto:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      profilePicture:
+        type: string
+    required:
+    - email
+    - name
+    - profilePicture
+    type: object
+  dto.UserDTO:
+    properties:
+      createdAt:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      profilePicture:
+        type: string
+      updatedAt:
+        type: integer
+    type: object
+  dto.UserProfileDTO:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      profilePicture:
+        type: string
+    type: object
+  language_enum.Language:
+    enum:
+    - id
+    - en
+    type: string
+    x-enum-varnames:
+    - Indonesian
+    - English
+  response.Meta:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      meta:
+        $ref: '#/definitions/response.Meta'
+    type: object
+  response.ResponseError:
+    properties:
+      error: {}
+      meta:
+        $ref: '#/definitions/response.Meta'
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@codewithazri.com
+  description: API documentation for CodeWithAzri, an educational platform that offers
+    a free and collaborative environment for learning coding. Provides resources,
+    exercises, and a community for both mobile app and web app users.
+  license:
+    name: MIT
+  title: CodeWithAzri API
+  version: "1.0"
+paths:
+  /api/v1/courses:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of courses based on the specified page
+        and limit parameters.
+      operationId: get-paginated-courses
+      parameters:
+      - description: 'Page number for pagination (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response with paginated courses
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.CourseDTO'
+                  type: array
+              type: object
+        "400":
+          description: Bad request, invalid input
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "401":
+          description: Unauthorized, missing or invalid authentication token
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+      security:
+      - Bearer: []
+      summary: Get paginated list of courses
+      tags:
+      - Course
+  /api/v1/courses/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Create a new course if it does not exist or fetch the existing
+        course based on the provided ID.
+      operationId: create-or-fetch-course
+      parameters:
+      - description: Course ID for creation or fetching
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response with course details
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CourseDTO'
+              type: object
+        "400":
+          description: Bad request, invalid input
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "401":
+          description: Unauthorized, missing or invalid authentication token
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "404":
+          description: Course not found
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+      security:
+      - Bearer: []
+      summary: Create or fetch course details
+      tags:
+      - Course
+  /api/v1/users:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user if not exists or fetch the existing user based
+        on the provided data.
+      operationId: create-or-fetch-user
+      parameters:
+      - description: User data for creation or fetching
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUpdateDto'
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserDTO'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+      security:
+      - Bearer: []
+      summary: Create or fetch a user
+      tags:
+      - User
+  /api/v1/users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Fetch the profile of the authenticated user based on the provided
+        Authorization token.
+      operationId: get-user-profile
+      parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserProfileDTO'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseError'
+      security:
+      - Bearer: []
+      summary: Fetch user profile
+      tags:
+      - User
+swagger: "2.0"

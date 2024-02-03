@@ -23,8 +23,8 @@ func NewRepository(db *sql.DB) UserRepository {
 }
 
 func (r *Repository) Create(e entity.User) error {
-	query := "INSERT INTO users (id, name, email, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)"
-	_, err := r.db.Exec(query, e.ID, e.Name, e.Email, e.CreatedAt, e.UpdatedAt)
+	query := "INSERT INTO users (id, name, email, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)"
+	_, err := r.db.Exec(query, e.ID, e.Name, e.Email, e.ProfilePicture, e.CreatedAt, e.UpdatedAt)
 	return err
 }
 
@@ -39,7 +39,7 @@ func (r *Repository) ReadMany(limit, offset int) ([]entity.User, error) {
 	var users []entity.User
 	for rows.Next() {
 		var user entity.User
-		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.ProfilePicture, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +54,7 @@ func (r *Repository) ReadOne(id string) (entity.User, error) {
 	row := r.db.QueryRow(query, id)
 
 	var user entity.User
-	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.ProfilePicture, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return entity.User{}, err
 	}
