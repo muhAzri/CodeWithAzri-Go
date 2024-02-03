@@ -628,7 +628,11 @@ func TestRepository_Update(t *testing.T) {
 	// Test Update Begin Transaction Error
 	testUpdateBeginTransactionError(t, mock, repo, courseEntity)
 
+	// Test Update Commit Transaction Error
 	testUpdateBeginTransactionErrorRollback(t, mock, repo, courseEntity)
+
+	//Test Update Delete Tags Link Error
+	testUpdateDeleteTagsFailure(t, mock, repo, courseEntity)
 }
 
 func testUpdateSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
@@ -723,6 +727,25 @@ func testUpdateBeginTransactionError(t *testing.T, mock sqlmock.Sqlmock, repo re
 }
 
 func testUpdateBeginTransactionErrorRollback(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnError(errors.New("some error"))
+
+	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testUpdateDeleteTagsFailure(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
 	mock.ExpectBegin()
 
 	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
