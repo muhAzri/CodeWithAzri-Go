@@ -174,10 +174,10 @@ func (r *Repository) Update(id uuid.UUID, updatedCourse entity.Course) error {
 
 	courseUpdateQuery := `
 		UPDATE courses 
-		SET name = $1, description = $2 , language = $3
-		WHERE id = $4
+		SET name = $1, description = $2 , language = $3, updated_at = $4
+		WHERE id = $5
 	`
-	_, err = tx.Exec(courseUpdateQuery, updatedCourse.Name, updatedCourse.Description, updatedCourse.Language, id)
+	_, err = tx.Exec(courseUpdateQuery, updatedCourse.Name, updatedCourse.Description, updatedCourse.UpdatedAt, updatedCourse.Language, id)
 	if err != nil {
 		return fmt.Errorf("failed to update course details: %v", err)
 	}
@@ -204,11 +204,11 @@ func (r *Repository) Update(id uuid.UUID, updatedCourse entity.Course) error {
 
 	for _, galleryItem := range updatedCourse.Gallery {
 		galleryQuery := `
-			INSERT INTO course_galleries (id, course_id, url) 
-			VALUES ($1, $2, $3)
-			ON CONFLICT (id) DO UPDATE SET url = $3
+			INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) 
+			VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT (id) DO UPDATE SET url = $3, updated_at = $5
 		`
-		_, err = tx.Exec(galleryQuery, galleryItem.ID, id, galleryItem.URL)
+		_, err = tx.Exec(galleryQuery, galleryItem.ID, id, galleryItem.URL, galleryItem.CreatedAt, galleryItem.UpdatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to update or insert gallery item: %v", err)
 		}
@@ -216,22 +216,22 @@ func (r *Repository) Update(id uuid.UUID, updatedCourse entity.Course) error {
 
 	for _, section := range updatedCourse.Sections {
 		sectionQuery := `
-			INSERT INTO course_sections (id, course_id, name) 
-			VALUES ($1, $2, $3)
-			ON CONFLICT (id) DO UPDATE SET name = $3
+			INSERT INTO course_sections (id, course_id, name, created_at, updated_at) 
+			VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT (id) DO UPDATE SET name = $3, updated_at = $5
 		`
-		_, err = tx.Exec(sectionQuery, section.ID, id, section.Name)
+		_, err = tx.Exec(sectionQuery, section.ID, id, section.Name, section.CreatedAt, section.UpdatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to update or insert section: %v", err)
 		}
 
 		for _, lesson := range section.Lessons {
 			lessonQuery := `
-				INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url) 
-				VALUES ($1, $2, $3, $4, $5)
-				ON CONFLICT (id) DO UPDATE SET title = $4, video_url = $5
+				INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url, created_at, updated_at) 
+				VALUES ($1, $2, $3, $4, $5, $6, $7)
+				ON CONFLICT (id) DO UPDATE SET title = $4, video_url = $5, updated_at = $7
 			`
-			_, err = tx.Exec(lessonQuery, lesson.ID, id, section.ID, lesson.Title, lesson.VideoURL)
+			_, err = tx.Exec(lessonQuery, lesson.ID, id, section.ID, lesson.Title, lesson.VideoURL, lesson.CreatedAt, lesson.UpdatedAt)
 			if err != nil {
 				return fmt.Errorf("failed to update or insert lesson: %v", err)
 			}
