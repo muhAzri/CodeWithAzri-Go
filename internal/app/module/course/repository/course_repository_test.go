@@ -654,6 +654,15 @@ func TestRepository_Update(t *testing.T) {
 
 	//Test Update Insert Gallery Error
 	testUpdateCourseInsertGallery(t, mock, repo, courseEntity)
+
+	//Test Update Insert Section Error
+	testUpdateCourseInsertSection(t, mock, repo, courseEntity)
+
+	//Test Update Insert Lesson Error
+	testUpdateCourseInsertLesson(t, mock, repo, courseEntity)
+
+	//Test Update Commit Transaction Error
+	testUpdateCourseCommitError(t, mock, repo, courseEntity)
 }
 
 func testUpdateSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
@@ -849,6 +858,203 @@ func testUpdateCourseInsertGallery(t *testing.T, mock sqlmock.Sqlmock, repo repo
 		sqlmock.AnyArg(),
 		sqlmock.AnyArg(),
 	).WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testUpdateCourseInsertSection(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec(`
+		DELETE FROM course_tags_courses
+		WHERE course_id = $1
+	`).WithArgs(sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec(`
+		INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)
+		`).WithArgs(courseEntity.ID, tag.ID).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	for _, galleryItem := range courseEntity.Gallery {
+		mock.ExpectExec(`
+			INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET url = $3, updated_at = $5
+		`).WithArgs(
+			galleryItem.ID,
+			courseEntity.ID,
+			galleryItem.URL,
+			galleryItem.CreatedAt,
+			galleryItem.UpdatedAt,
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	mock.ExpectExec(`
+			INSERT INTO course_sections (id, course_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $3, updated_at = $5
+		`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testUpdateCourseInsertLesson(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	// Expect the course details update query
+	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Expect the deletion of existing tags query
+	mock.ExpectExec(`
+		DELETE FROM course_tags_courses
+		WHERE course_id = $1
+	`).WithArgs(sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Expect linking course to tags queries
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec(`
+		INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)
+		`).WithArgs(courseEntity.ID, tag.ID).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	// Expect gallery update/insert queries
+	for _, galleryItem := range courseEntity.Gallery {
+		mock.ExpectExec(`
+			INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET url = $3, updated_at = $5
+		`).WithArgs(
+			galleryItem.ID,
+			courseEntity.ID,
+			galleryItem.URL,
+			galleryItem.CreatedAt,
+			galleryItem.UpdatedAt,
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	mock.ExpectExec(`
+			INSERT INTO course_sections (id, course_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $3, updated_at = $5
+		`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec(`
+			INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET title = $4, video_url = $5, updated_at = $7
+			`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnError(fmt.Errorf("some error"))
+
+	// Call the method you are testing
+	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testUpdateCourseCommitError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	// Expect the course details update query
+	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Expect the deletion of existing tags query
+	mock.ExpectExec(`
+		DELETE FROM course_tags_courses
+		WHERE course_id = $1
+	`).WithArgs(sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Expect linking course to tags queries
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec(`
+		INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)
+		`).WithArgs(courseEntity.ID, tag.ID).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	// Expect gallery update/insert queries
+	for _, galleryItem := range courseEntity.Gallery {
+		mock.ExpectExec(`
+			INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET url = $3, updated_at = $5
+		`).WithArgs(
+			galleryItem.ID,
+			courseEntity.ID,
+			galleryItem.URL,
+			galleryItem.CreatedAt,
+			galleryItem.UpdatedAt,
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	// Expect section update/insert queries
+	for _, section := range courseEntity.Sections {
+		mock.ExpectExec(`
+			INSERT INTO course_sections (id, course_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $3, updated_at = $5
+		`).WithArgs(
+			section.ID,
+			courseEntity.ID,
+			section.Name,
+			section.CreatedAt,
+			section.UpdatedAt,
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		// Expect lesson update/insert queries within each section
+		for _, lesson := range section.Lessons {
+			mock.ExpectExec(`
+			INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET title = $4, video_url = $5, updated_at = $7
+			`).WithArgs(
+				lesson.ID,
+				courseEntity.ID,
+				section.ID,
+				lesson.Title,
+				lesson.VideoURL,
+				lesson.CreatedAt,
+				lesson.UpdatedAt,
+			).WillReturnResult(sqlmock.NewResult(0, 1))
+		}
+	}
+
+	mock.ExpectCommit().WillReturnError(fmt.Errorf("some error"))
 
 	err := repo.Update(courseEntity.ID, courseEntity)
 
