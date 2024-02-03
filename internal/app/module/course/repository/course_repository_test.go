@@ -498,7 +498,44 @@ func TestRepository_ReadMany_WithDuplicate(t *testing.T) {
 	db, mock, repo := initializeMockDB(t)
 	defer db.Close()
 
-	courseEntity := MockArrayEntity
+	courseEntity := []entity.Course{
+		{
+			ID:          uuid.MustParse("18a95d2f-a941-4a64-bbe5-256be7626db2"),
+			Name:        "Mock Course",
+			Description: "Mock Course Description",
+			Language:    "en",
+			CourseTags:  mockTags,
+			Gallery: []entity.CourseGallery{
+				{
+					ID:        uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a5"),
+					CourseID:  uuid.MustParse("18a95d2f-a941-4a64-bbe5-256be7626db2"),
+					URL:       "https://www.google.com",
+					CreatedAt: 121212,
+					UpdatedAt: 121212,
+				},
+			},
+			CreatedAt: 121212,
+			UpdatedAt: 121212,
+		},
+		{
+			ID:          uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
+			Name:        "Mock Course 2 ",
+			Description: "Mock Course Description 2",
+			Language:    "id",
+			CourseTags:  mockTags,
+			Gallery: []entity.CourseGallery{
+				{
+					ID:        uuid.MustParse("d7899f00-3314-487f-a284-75c3916f5605"),
+					CourseID:  uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
+					URL:       "https://www.google.com",
+					CreatedAt: 121212,
+					UpdatedAt: 121212,
+				},
+			},
+			CreatedAt: 121212,
+			UpdatedAt: 121212,
+		},
+	}
 
 	rows := prepareManyRows(courseEntity).AddRow(
 		courseEntity[1].ID, courseEntity[1].Name, courseEntity[1].Description, courseEntity[1].Language, 121212, 121212,
@@ -585,6 +622,16 @@ func TestRepository_Update(t *testing.T) {
 
 	courseEntity := MockEntity
 
+	// Test Update Success
+	testUpdateSuccess(t, mock, repo, courseEntity)
+
+	// Test Update Begin Transaction Error
+	testUpdateBeginTransactionError(t, mock, repo, courseEntity)
+
+	testUpdateBeginTransactionErrorRollback(t, mock, repo, courseEntity)
+}
+
+func testUpdateSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
 	mock.ExpectBegin()
 
 	// Expect the course details update query
@@ -662,5 +709,39 @@ func TestRepository_Update(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Unfulfilled expectations: %s", err)
 	}
+}
 
+func testUpdateBeginTransactionError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin().WillReturnError(errors.New("some error"))
+
+	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to begin transaction: some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testUpdateBeginTransactionErrorRollback(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec(`
+		DELETE FROM course_tags_courses
+		WHERE course_id = $1
+	`).WithArgs(sqlmock.AnyArg()).WillReturnError(errors.New("some error"))
+
+	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
