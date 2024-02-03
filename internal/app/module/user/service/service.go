@@ -1,7 +1,7 @@
 package service
 
 import (
-	dto "CodeWithAzri/internal/app/module/user/dto"
+	"CodeWithAzri/internal/app/module/user/dto"
 	"CodeWithAzri/internal/app/module/user/entity"
 	"CodeWithAzri/internal/app/module/user/repository"
 	"CodeWithAzri/pkg/adapter"
@@ -10,7 +10,8 @@ import (
 )
 
 type UserService interface {
-	Create(dto *dto.CreateUpdateDto) (entity.User, error)
+	Create(dto *dto.CreateUpdateDto) (dto.UserDTO, error)
+	GetProfile(ID string) (dto.UserProfileDTO, error)
 }
 
 type Service struct {
@@ -23,22 +24,23 @@ func NewService(r repository.UserRepository) UserService {
 	return s
 }
 
-func (s *Service) Create(dto *dto.CreateUpdateDto) (entity.User, error) {
-	existingUser, err := s.repository.ReadOne(dto.ID)
+func (s *Service) Create(inputDTO *dto.CreateUpdateDto) (dto.UserDTO, error) {
+	existingUser, err := s.repository.ReadOne(inputDTO.ID)
 
 	if err != nil && err != sql.ErrNoRows {
-		return entity.User{}, err
+		return dto.UserDTO{}, err
 	}
 
 	if existingUser.ID != "" {
+		existingUserDTO, _ := adapter.AnyToType[dto.UserDTO](existingUser)
 
-		return existingUser, nil
+		return existingUserDTO, nil
 	}
 
-	user, err := adapter.AnyToType[entity.User](dto)
+	user, err := adapter.AnyToType[entity.User](inputDTO)
 
 	if err != nil {
-		return entity.User{}, err
+		return dto.UserDTO{}, err
 	}
 
 	now := timepkg.NowUnixMilli()
@@ -49,9 +51,25 @@ func (s *Service) Create(dto *dto.CreateUpdateDto) (entity.User, error) {
 	err = s.repository.Create(user)
 
 	if err != nil {
-
-		return entity.User{}, err
+		return dto.UserDTO{}, err
 	}
 
-	return user, nil
+	userDTO, _ := adapter.AnyToType[dto.UserDTO](user)
+
+	return userDTO, nil
+}
+
+func (s *Service) GetProfile(ID string) (dto.UserProfileDTO, error) {
+	user, err := s.repository.ReadOne(ID)
+
+	if err != nil && err != sql.ErrNoRows {
+		return dto.UserProfileDTO{}, err
+	}
+
+	userDTO, err := adapter.AnyToType[dto.UserProfileDTO](user)
+	if err != nil {
+		return dto.UserProfileDTO{}, err
+	}
+
+	return userDTO, nil
 }

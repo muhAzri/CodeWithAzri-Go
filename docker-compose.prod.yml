@@ -1,0 +1,12 @@
+version: '1.0'
+
+services:
+  CWAProd:
+    image: code-with-azri-prod
+    build:
+      context: .
+      args:
+        - ENV_FILE=prod.env
+        - FIREBASE_PATH=code-with-azri-firebase-adminsdk-vf6lc-bd1eeda135.json
+    ports:
+      - "8080:8080"

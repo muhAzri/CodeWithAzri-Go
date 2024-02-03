@@ -4,7 +4,6 @@ package mocks
 
 import (
 	dto "CodeWithAzri/internal/app/module/user/dto"
-	entity "CodeWithAzri/internal/app/module/user/entity"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -23,22 +22,22 @@ func (_m *UserService) EXPECT() *UserService_Expecter {
 }
 
 // Create provides a mock function with given fields: _a0
-func (_m *UserService) Create(_a0 *dto.CreateUpdateDto) (entity.User, error) {
+func (_m *UserService) Create(_a0 *dto.CreateUpdateDto) (dto.UserDTO, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 entity.User
+	var r0 dto.UserDTO
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*dto.CreateUpdateDto) (entity.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(*dto.CreateUpdateDto) (dto.UserDTO, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(*dto.CreateUpdateDto) entity.User); ok {
+	if rf, ok := ret.Get(0).(func(*dto.CreateUpdateDto) dto.UserDTO); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(entity.User)
+		r0 = ret.Get(0).(dto.UserDTO)
 	}
 
 	if rf, ok := ret.Get(1).(func(*dto.CreateUpdateDto) error); ok {
@@ -68,12 +67,68 @@ func (_c *UserService_Create_Call) Run(run func(_a0 *dto.CreateUpdateDto)) *User
 	return _c
 }
 
-func (_c *UserService_Create_Call) Return(_a0 entity.User, _a1 error) *UserService_Create_Call {
+func (_c *UserService_Create_Call) Return(_a0 dto.UserDTO, _a1 error) *UserService_Create_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *UserService_Create_Call) RunAndReturn(run func(*dto.CreateUpdateDto) (entity.User, error)) *UserService_Create_Call {
+func (_c *UserService_Create_Call) RunAndReturn(run func(*dto.CreateUpdateDto) (dto.UserDTO, error)) *UserService_Create_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetProfile provides a mock function with given fields: ID
+func (_m *UserService) GetProfile(ID string) (dto.UserProfileDTO, error) {
+	ret := _m.Called(ID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetProfile")
+	}
+
+	var r0 dto.UserProfileDTO
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (dto.UserProfileDTO, error)); ok {
+		return rf(ID)
+	}
+	if rf, ok := ret.Get(0).(func(string) dto.UserProfileDTO); ok {
+		r0 = rf(ID)
+	} else {
+		r0 = ret.Get(0).(dto.UserProfileDTO)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(ID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserService_GetProfile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetProfile'
+type UserService_GetProfile_Call struct {
+	*mock.Call
+}
+
+// GetProfile is a helper method to define mock.On call
+//   - ID string
+func (_e *UserService_Expecter) GetProfile(ID interface{}) *UserService_GetProfile_Call {
+	return &UserService_GetProfile_Call{Call: _e.mock.On("GetProfile", ID)}
+}
+
+func (_c *UserService_GetProfile_Call) Run(run func(ID string)) *UserService_GetProfile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *UserService_GetProfile_Call) Return(_a0 dto.UserProfileDTO, _a1 error) *UserService_GetProfile_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserService_GetProfile_Call) RunAndReturn(run func(string) (dto.UserProfileDTO, error)) *UserService_GetProfile_Call {
 	_c.Call.Return(run)
 	return _c
 }

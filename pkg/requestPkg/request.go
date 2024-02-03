@@ -3,6 +3,8 @@ package requestPkg
 import (
 	"CodeWithAzri/internal/pkg/middleware"
 	"net/http"
+
+	"github.com/go-chi/chi"
 )
 
 func GetUserID(r *http.Request) string {
@@ -11,7 +13,7 @@ func GetUserID(r *http.Request) string {
 }
 
 func GetURLParam(r *http.Request, key string) string {
-	return r.URL.Query().Get(key)
+	return chi.URLParam(r, key)
 }
 
 func GetQueryParam(r *http.Request, key string) string {
