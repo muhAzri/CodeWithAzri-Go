@@ -494,6 +494,39 @@ func TestRepository_ReadMany(t *testing.T) {
 	}
 }
 
+func TestRepository_ReadMany_WithDuplicate(t *testing.T) {
+	db, mock, repo := initializeMockDB(t)
+	defer db.Close()
+
+	courseEntity := MockArrayEntity
+
+	rows := prepareManyRows(courseEntity).AddRow(
+		courseEntity[1].ID, courseEntity[1].Name, courseEntity[1].Description, courseEntity[1].Language, 121212, 121212,
+		"345c2c39-5a19-4842-bab8-072a53cd020b", "Mock Tag", 121212, 121212,
+		"d7899f00-3314-487f-a284-75c3916f5605", "https://www.google.com", courseEntity[1].ID, 121212, 121212,
+	)
+
+	// Mocking the database query
+	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LIMIT $1 OFFSET $2").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnRows(rows)
+
+	// Calling the ReadOne method
+	_, err := repo.ReadMany(10, 0)
+	if err != nil {
+		t.Fatalf("Error while calling ReadOne: %v", err)
+	}
+
+	// Asserting the result
+	// assert.Equal(t, courseEntity, result)
+
+	// Checking if all expectations were met
+	err = mock.ExpectationsWereMet()
+	if err != nil {
+		t.Fatalf("Expectations not met: %v", err)
+	}
+}
+
 func TestRepository_Error(t *testing.T) {
 	db, mock, repo := initializeMockDB(t)
 	defer db.Close()

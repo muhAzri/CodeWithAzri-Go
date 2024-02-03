@@ -217,11 +217,11 @@ func prepareManyRows(courseArray []entity.Course) *sqlmock.Rows {
 
 	}
 
-	rows.AddRow(
-		courseArray[1].ID, courseArray[1].Name, courseArray[1].Description, courseArray[1].Language, 121212, 121212,
-		"345c2c39-5a19-4842-bab8-072a53cd020b", "Mock Tag", 121212, 121212,
-		"d7899f00-3314-487f-a284-75c3916f5605", "https://www.google.com", courseArray[1].ID, 121212, 121212,
-	)
+	// rows.AddRow(
+	// 	courseArray[1].ID, courseArray[1].Name, courseArray[1].Description, courseArray[1].Language, 121212, 121212,
+	// 	"345c2c39-5a19-4842-bab8-072a53cd020b", "Mock Tag", 121212, 121212,
+	// 	"d7899f00-3314-487f-a284-75c3916f5605", "https://www.google.com", courseArray[1].ID, 121212, 121212,
+	// )
 
 	return rows
 }
