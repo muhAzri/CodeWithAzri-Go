@@ -26,16 +26,15 @@ func TestRepository_Create(t *testing.T) {
 	defer db.Close()
 
 	user := entity.User{
-		ID:             "1",
-		Name:           "John Doe",
-		Email:          "john@example.com",
-		ProfilePicture: "https://example.com/profile.png",
-		CreatedAt:      121212,
-		UpdatedAt:      121212,
+		ID:        "1",
+		Name:      "John Doe",
+		Email:     "john@example.com",
+		CreatedAt: 121212,
+		UpdatedAt: 121212,
 	}
 
-	mock.ExpectExec("INSERT INTO users (id, name, email, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)").
-		WithArgs(user.ID, user.Name, user.Email, user.ProfilePicture, user.CreatedAt, user.UpdatedAt).
+	mock.ExpectExec("INSERT INTO users (id, name, email, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)").
+		WithArgs(user.ID, user.Name, user.Email, user.CreatedAt, user.UpdatedAt).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err := repo.Create(user)
@@ -46,9 +45,9 @@ func TestRepository_ReadMany(t *testing.T) {
 	db, mock, repo := initializeMockDB(t)
 	defer db.Close()
 
-	rows := sqlmock.NewRows([]string{"id", "name", "email", "profile_picture", "created_at", "updated_at"}).
-		AddRow("1", "John Doe", "john@domain.com", "https://example.com/profile.png", 121212, 121212).
-		AddRow("2", "Jane Doe", "jane@domain.com", "https://example.com/profile.png", 121212, 121212)
+	rows := sqlmock.NewRows([]string{"id", "name", "email", "created_at", "updated_at"}).
+		AddRow("1", "John Doe", "john@domain.com", 121212, 121212).
+		AddRow("2", "Jane Doe", "jane@domain.com", 121212, 121212)
 
 	mock.ExpectQuery("SELECT * FROM users LIMIT $1 OFFSET $2").
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
@@ -66,16 +65,15 @@ func TestRepository_ReadOne(t *testing.T) {
 
 	userID := "1"
 	user := entity.User{
-		ID:             userID,
-		Name:           "John Doe",
-		Email:          "john@example.com",
-		ProfilePicture: "https://example.com/profile.png",
-		CreatedAt:      121212,
-		UpdatedAt:      121212,
+		ID:        userID,
+		Name:      "John Doe",
+		Email:     "john@example.com",
+		CreatedAt: 121212,
+		UpdatedAt: 121212,
 	}
 
-	rows := sqlmock.NewRows([]string{"id", "name", "email", "profile_picture", "created_at", "updated_at"}).
-		AddRow(user.ID, user.Name, user.Email, user.ProfilePicture, user.CreatedAt, user.UpdatedAt)
+	rows := sqlmock.NewRows([]string{"id", "name", "email", "created_at", "updated_at"}).
+		AddRow(user.ID, user.Name, user.Email, user.CreatedAt, user.UpdatedAt)
 
 	mock.ExpectQuery(`SELECT * FROM users WHERE id = $1`).
 		WithArgs(sqlmock.AnyArg()).
@@ -93,12 +91,11 @@ func TestRepository_Update(t *testing.T) {
 
 	userID := "1"
 	user := entity.User{
-		ID:             userID,
-		Name:           "Updated Name",
-		Email:          "john@example.com",
-		ProfilePicture: "https://example.com/profile.png",
-		CreatedAt:      121212,
-		UpdatedAt:      121212,
+		ID:        userID,
+		Name:      "Updated Name",
+		Email:     "john@example.com",
+		CreatedAt: 121212,
+		UpdatedAt: 121212,
 	}
 
 	mock.ExpectExec("UPDATE users SET name = $1 WHERE id = $2").
@@ -194,9 +191,9 @@ func TestRepository_ReadMany_ErrorScan(t *testing.T) {
 	db, mock, repo := initializeMockDB(t)
 	defer db.Close()
 
-	rows := sqlmock.NewRows([]string{"id", "name", "email", "profile_picture", "created_at", "updated_at"}).
-		AddRow("1", "John Doe", "john@domain.com", "https://example.com/profile.png", "invalid_created_at", 121212).
-		AddRow("2", "Jane Doe", "jane@domain.com", "https://example.com/profile.png", 121212, 121212)
+	rows := sqlmock.NewRows([]string{"id", "name", "email", "created_at", "updated_at"}).
+		AddRow("1", "John Doe", "john@domain.com", "invalid_created_at", 121212).
+		AddRow("2", "Jane Doe", "jane@domain.com", 121212, 121212)
 
 	mock.ExpectQuery("SELECT * FROM users LIMIT $1 OFFSET $2").
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).

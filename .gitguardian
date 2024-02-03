@@ -1,9 +1,0 @@
-version: 1
-
-secret:
-   ignored-matches:
-    - match: postgres
-      name:
-
-  ignored-paths:
-    - 'docker-compose.dev.yml'

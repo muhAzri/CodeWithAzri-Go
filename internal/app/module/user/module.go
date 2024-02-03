@@ -23,6 +23,5 @@ func NewModule(db *sql.DB, validate *validator.Validate) *Module {
 	m.Service = service.NewService(m.Repository)
 	m.Handler = handler.NewHandler(m.Service, validate)
 	m.Migration = &migration.UserMigration{}
-
 	return m
 }
