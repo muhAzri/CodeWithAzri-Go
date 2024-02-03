@@ -1,14 +1,15 @@
 package app
 
 import (
+	"CodeWithAzri/internal/app/module/course"
 	firebaseModule "CodeWithAzri/internal/app/module/firebase"
 	"CodeWithAzri/internal/app/module/user"
-	"CodeWithAzri/internal/pkg"
 	"CodeWithAzri/internal/pkg/constant"
 	"CodeWithAzri/internal/pkg/middleware"
 	"CodeWithAzri/internal/pkg/router"
 	"CodeWithAzri/pkg/sqlPkg"
 	"database/sql"
+	"log"
 	"net/http"
 
 	_ "CodeWithAzri/docs"
@@ -19,11 +20,12 @@ import (
 
 type App struct {
 	SqlDB          *sql.DB
-	Server         *pkg.Server
+	Router         *router.Router
 	Middlewares    []any
+	Validate       *validator.Validate
 	UserModule     *user.Module
 	FirebaseModule *firebaseModule.Module
-	Validate       *validator.Validate
+	CourseModule   *course.Module
 }
 
 func NewApp() *App {
@@ -43,10 +45,20 @@ func (a *App) initDB() {
 func (a *App) initModules() {
 	a.UserModule = user.NewModule(a.SqlDB, a.Validate)
 	a.FirebaseModule = firebaseModule.NewModule()
+	a.CourseModule = course.NewModule(a.SqlDB, a.Validate)
 }
 
 func (a *App) initMigrations() {
-	a.UserModule.Migration.CreateUsersTable(a.SqlDB)
+	var err error
+
+	err = a.UserModule.Migration.CreateUsersTable(a.SqlDB)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = a.CourseModule.Migration.CreateCourseTables(a.SqlDB)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (a *App) initMiddlewares() {
@@ -55,20 +67,23 @@ func (a *App) initMiddlewares() {
 }
 
 func (a *App) initModuleRouters() {
-	http.Handle("/swagger/", http.StripPrefix("/swagger/", httpSwagger.Handler(
-		httpSwagger.URL("/swagger/doc.json"),
-	)))
+	// http.Handle("/swagger/", http.StripPrefix("/swagger/", httpSwagger.Handler(
+	// 	httpSwagger.URL("/swagger/doc.json"),
+	// )))
 
 	m := a.Middlewares[0].(*middleware.FirebaseMiddleware)
-	globalMiddlewares := router.RegisterGlobalMiddleware(a.Server.Mux, m)
-	router.RegisterUserRoutes(a.Server.Mux, constant.V1, a.UserModule)
 
-	http.Handle("/api/v1/", globalMiddlewares)
+	router.RegisterUserRoutes(a.Router, constant.V1, a.UserModule, m)
+	router.RegisterCourseRoutes(a.Router, constant.V1, a.CourseModule, m)
+	a.Router.Mux.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+
 }
 
 func (a *App) initComponents() {
 	a.initDB()
-	a.Server = pkg.NewServer()
+	a.Router = router.NewRouter()
 	a.Validate = validator.New()
 	a.initModules()
 	a.initMigrations()
@@ -77,5 +92,11 @@ func (a *App) initComponents() {
 }
 
 func (a *App) Run() {
-	http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(
+		":8080",
+		a.Router.Mux,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
