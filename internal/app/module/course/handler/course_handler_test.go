@@ -45,7 +45,6 @@ func TestHandler_GetCourseDetail(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
-
 }
 
 func TestHandler_GetCourseDetail_BadRequest(t *testing.T) {
@@ -130,4 +129,23 @@ func TestHandler_GetCourseDetail_NotFound(t *testing.T) {
 		assert.Contains(t, response["meta"].(map[string]interface{})["status"], "error")
 
 	})
+}
+
+func TestHandler_GetPaginatedCourses(t *testing.T) {
+	courseHandler, mockService := initializeHandler(t)
+
+	t.Run("Get Paginated Courses Successfully", func(t *testing.T) {
+		mockService.On("GetPaginatedCourses", mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(MockArrayCourseDTO, nil)
+
+		req, err := http.NewRequest("GET", "/courses?page=1&?limit=10", nil)
+		assert.NoError(t, err)
+
+		recorder := httptest.NewRecorder()
+
+		courseHandler.GetPaginatedCourses(recorder, req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+
+	})
+
 }
