@@ -132,9 +132,9 @@ func (r *Repository) ReadOne(id uuid.UUID) (entity.Course, error) {
 func (r *Repository) ReadMany(limit, offset int) ([]entity.Course, error) {
 
 	coursesQuery := `
-		SELECT c.id AS course_id, c.name, c.description, c.language,
-			t.id AS tag_id, t.name AS tag_name,
-			g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id
+		SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at,
+			t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at,
+			g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at
 		FROM courses c
 			LEFT JOIN course_tags_courses tc ON c.id = tc.course_id
 			LEFT JOIN course_tags t ON tc.course_tags_id = t.id
@@ -411,8 +411,13 @@ func scanReadMany(rows *sql.Rows) (map[uuid.UUID]*entity.Course, error) {
 	for rows.Next() {
 		var courseID, tagID, galleryID, galleryCourseID uuid.UUID
 		var courseName, courseDescription, courseLanguage, tagName, galleryURL sql.NullString
+		var courseCreatedAt, courseUpdatedAt, tagCreatedAt, tagUpdatedAt, galleryCreatedAt, galleryUpdatedAt sql.NullInt64
 
-		err := rows.Scan(&courseID, &courseName, &courseDescription, &courseLanguage, &tagID, &tagName, &galleryID, &galleryURL, &galleryCourseID)
+		err := rows.Scan(
+			&courseID, &courseName, &courseDescription, &courseLanguage, &courseCreatedAt, &courseUpdatedAt,
+			&tagID, &tagName, &tagCreatedAt, &tagUpdatedAt,
+			&galleryID, &galleryURL, &galleryCourseID, &galleryCreatedAt, &galleryUpdatedAt,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -423,21 +428,27 @@ func scanReadMany(rows *sql.Rows) (map[uuid.UUID]*entity.Course, error) {
 				Name:        courseName.String,
 				Description: courseDescription.String,
 				Language:    language_enum.Language(courseLanguage.String),
+				CreatedAt:   courseCreatedAt.Int64,
+				UpdatedAt:   courseUpdatedAt.Int64,
 			}
 		}
 
 		if tagID != uuid.Nil && tagName.Valid && !tagExists(coursesMap[courseID].CourseTags, tagID) {
 			coursesMap[courseID].CourseTags = append(coursesMap[courseID].CourseTags, entity.CourseTags{
-				ID:   tagID,
-				Name: tagName.String,
+				ID:        tagID,
+				Name:      tagName.String,
+				CreatedAt: tagCreatedAt.Int64,
+				UpdatedAt: tagUpdatedAt.Int64,
 			})
 		}
 
 		if galleryID != uuid.Nil && galleryURL.Valid && galleryCourseID != uuid.Nil && !galleryExists(coursesMap[courseID].Gallery, galleryID) {
 			coursesMap[courseID].Gallery = append(coursesMap[courseID].Gallery, entity.CourseGallery{
-				ID:       galleryID,
-				CourseID: galleryCourseID,
-				URL:      galleryURL.String,
+				ID:        galleryID,
+				CourseID:  galleryCourseID,
+				URL:       galleryURL.String,
+				CreatedAt: galleryCreatedAt.Int64,
+				UpdatedAt: galleryUpdatedAt.Int64,
 			})
 		}
 	}

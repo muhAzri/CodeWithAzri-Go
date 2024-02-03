@@ -104,6 +104,45 @@ var MockEntity entity.Course = entity.Course{
 	UpdatedAt: 121212,
 }
 
+var MockArrayEntity []entity.Course = []entity.Course{
+	{
+		ID:          uuid.MustParse("18a95d2f-a941-4a64-bbe5-256be7626db2"),
+		Name:        "Mock Course",
+		Description: "Mock Course Description",
+		Language:    "en",
+		CourseTags:  mockTags,
+		Gallery: []entity.CourseGallery{
+			{
+				ID:        uuid.MustParse("b2b71fda-f0f2-4358-9722-b3f13c4564a5"),
+				CourseID:  uuid.MustParse("18a95d2f-a941-4a64-bbe5-256be7626db2"),
+				URL:       "https://www.google.com",
+				CreatedAt: 121212,
+				UpdatedAt: 121212,
+			},
+		},
+		CreatedAt: 121212,
+		UpdatedAt: 121212,
+	},
+	{
+		ID:          uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
+		Name:        "Mock Course 2 ",
+		Description: "Mock Course Description 2",
+		Language:    "id",
+		CourseTags:  mockTags,
+		Gallery: []entity.CourseGallery{
+			{
+				ID:        uuid.MustParse("d7899f00-3314-487f-a284-75c3916f5605"),
+				CourseID:  uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
+				URL:       "https://www.google.com",
+				CreatedAt: 121212,
+				UpdatedAt: 121212,
+			},
+		},
+		CreatedAt: 121212,
+		UpdatedAt: 121212,
+	},
+}
+
 func initializeMockDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock, repository.CourseRepository) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
@@ -558,6 +597,33 @@ func testReadOneQuerryError(t *testing.T, mock sqlmock.Sqlmock, repo repository.
 	}
 }
 
+func TestRepository_ReadMany(t *testing.T) {
+	db, mock, repo := initializeMockDB(t)
+	defer db.Close()
+
+	courseEntity := MockArrayEntity
+
+	// Mocking the database query
+	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LIMIT $1 OFFSET $2").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnRows(prepareManyRows(courseEntity))
+
+	// Calling the ReadOne method
+	result, err := repo.ReadMany(10, 0)
+	if err != nil {
+		t.Fatalf("Error while calling ReadOne: %v", err)
+	}
+
+	// Asserting the result
+	assert.Equal(t, courseEntity, result)
+
+	// Checking if all expectations were met
+	err = mock.ExpectationsWereMet()
+	if err != nil {
+		t.Fatalf("Expectations not met: %v", err)
+	}
+}
+
 func prepareRows(courseEntity entity.Course) *sqlmock.Rows {
 	rows := sqlmock.NewRows([]string{
 		"course_id", "name", "description", "language", "created_at", "updated_at",
@@ -608,6 +674,35 @@ func prepareRows(courseEntity entity.Course) *sqlmock.Rows {
 		"b2b71fda-f0f2-4358-9722-b3f13c4564a7", "Mock Section", "18a95d2f-a941-4a64-bbe5-256be7626db2", 121212, 121212,
 		"d60619ae-cee9-4877-8f5d-8b294fe9cd80", "Mock Lesson", "https://www.youtube.com", "18a95d2f-a941-4a64-bbe5-256be7626db2", "b2b71fda-f0f2-4358-9722-b3f13c4564a7", 121212, 121212,
 	)
+
+	return rows
+}
+
+func prepareManyRows(courseArray []entity.Course) *sqlmock.Rows {
+	rows := sqlmock.NewRows([]string{
+		"course_id", "name", "description", "language", "created_at", "updated_at",
+		"tag_id", "tag_name", "tag_created_at", "tag_updated_at",
+		"gallery_id", "gallery_url", "gallery_course_id", "gallery_created_at", "gallery_updated_at",
+	})
+
+	for _, courseEntity := range courseArray {
+		for _, tag := range courseEntity.CourseTags {
+			rows.AddRow(
+				courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language, 121212, 121212,
+				tag.ID, tag.Name, 121212, 121212,
+				uuid.Nil, "", uuid.Nil, 0, 0,
+			)
+		}
+
+		for _, gallery := range courseEntity.Gallery {
+			rows.AddRow(
+				courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language, 121212, 121212,
+				uuid.Nil, "", 0, 0,
+				gallery.ID, gallery.URL, gallery.CourseID, 121212, 121212,
+			)
+		}
+
+	}
 
 	return rows
 }
