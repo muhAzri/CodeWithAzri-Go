@@ -137,7 +137,7 @@ func TestHandler_GetPaginatedCourses(t *testing.T) {
 	t.Run("Get Paginated Courses Successfully", func(t *testing.T) {
 		mockService.On("GetPaginatedCourses", mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(MockArrayCourseDTO, nil)
 
-		req, err := http.NewRequest("GET", "/courses?page=1&?limit=10", nil)
+		req, err := http.NewRequest("GET", "/courses?page=1&limit=10", nil)
 		assert.NoError(t, err)
 
 		recorder := httptest.NewRecorder()
