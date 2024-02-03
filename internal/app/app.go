@@ -1,31 +1,26 @@
 package app
 
 import (
-	"CodeWithAzri/internal/app/module/course"
 	firebaseModule "CodeWithAzri/internal/app/module/firebase"
 	"CodeWithAzri/internal/app/module/user"
+	"CodeWithAzri/internal/pkg"
 	"CodeWithAzri/internal/pkg/constant"
 	"CodeWithAzri/internal/pkg/middleware"
 	"CodeWithAzri/internal/pkg/router"
 	"CodeWithAzri/pkg/sqlPkg"
 	"database/sql"
-	"log"
 	"net/http"
 
-	_ "CodeWithAzri/docs"
-
 	"github.com/go-playground/validator/v10"
-	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type App struct {
 	SqlDB          *sql.DB
-	Router         *router.Router
+	Server         *pkg.Server
 	Middlewares    []any
-	Validate       *validator.Validate
 	UserModule     *user.Module
 	FirebaseModule *firebaseModule.Module
-	CourseModule   *course.Module
+	Validate       *validator.Validate
 }
 
 func NewApp() *App {
@@ -45,20 +40,10 @@ func (a *App) initDB() {
 func (a *App) initModules() {
 	a.UserModule = user.NewModule(a.SqlDB, a.Validate)
 	a.FirebaseModule = firebaseModule.NewModule()
-	a.CourseModule = course.NewModule(a.SqlDB, a.Validate)
 }
 
 func (a *App) initMigrations() {
-	var err error
-
-	err = a.UserModule.Migration.CreateUsersTable(a.SqlDB)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = a.CourseModule.Migration.CreateCourseTables(a.SqlDB)
-	if err != nil {
-		log.Fatal(err)
-	}
+	a.UserModule.Migration.CreateUsersTable(a.SqlDB)
 }
 
 func (a *App) initMiddlewares() {
@@ -67,23 +52,16 @@ func (a *App) initMiddlewares() {
 }
 
 func (a *App) initModuleRouters() {
-	// http.Handle("/swagger/", http.StripPrefix("/swagger/", httpSwagger.Handler(
-	// 	httpSwagger.URL("/swagger/doc.json"),
-	// )))
-
 	m := a.Middlewares[0].(*middleware.FirebaseMiddleware)
+	globalMiddlewares := router.RegisterGlobalMiddleware(a.Server.Mux, m)
+	router.RegisterUserRoutes(a.Server.Mux, constant.V1, a.UserModule)
 
-	router.RegisterUserRoutes(a.Router, constant.V1, a.UserModule, m)
-	router.RegisterCourseRoutes(a.Router, constant.V1, a.CourseModule, m)
-	a.Router.Mux.Get("/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("/swagger/doc.json"),
-	))
-
+	http.Handle("/api/v1/", globalMiddlewares)
 }
 
 func (a *App) initComponents() {
 	a.initDB()
-	a.Router = router.NewRouter()
+	a.Server = pkg.NewServer()
 	a.Validate = validator.New()
 	a.initModules()
 	a.initMigrations()
@@ -92,11 +70,5 @@ func (a *App) initComponents() {
 }
 
 func (a *App) Run() {
-	err := http.ListenAndServe(
-		":8080",
-		a.Router.Mux,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	http.ListenAndServe(":8080", nil)
 }

@@ -1,15 +1,15 @@
 package router
 
 import (
-	"github.com/go-chi/chi"
+	"CodeWithAzri/internal/pkg/middleware"
+	"net/http"
 )
 
-type Router struct {
-	Mux *chi.Mux
-}
+func RegisterGlobalMiddleware(mux *http.ServeMux, firebaseMiddleware *middleware.FirebaseMiddleware) http.Handler {
+	combinedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Your logic for combining the middlewares goes here
+		firebaseMiddleware.AuthMiddleware(middleware.LoggerMiddleware(mux)).ServeHTTP(w, r)
+	})
 
-func NewRouter() *Router {
-	r := &Router{}
-	r.Mux = chi.NewRouter()
-	return r
+	return combinedHandler
 }

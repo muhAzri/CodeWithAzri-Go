@@ -2,7 +2,3 @@
 *firebase-adminsdk*.json
 
 !template.env
-
-run-dev.sh
-run-staging.sh
-run-prod.sh

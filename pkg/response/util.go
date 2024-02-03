@@ -38,7 +38,7 @@ func Respond(code int, metaData Meta, payload interface{}, w http.ResponseWriter
 }
 
 func RespondError(code int, err error, w http.ResponseWriter) {
-	response := &ResponseError{
+	response := &Response{
 		Error: map[string]string{"error": err.Error()},
 		Meta: Meta{
 			Message: "Error",
@@ -51,7 +51,7 @@ func RespondError(code int, err error, w http.ResponseWriter) {
 }
 
 func RespondErrorMessage(code int, msg string, w http.ResponseWriter) {
-	response := &ResponseError{
+	response := &Response{
 		Error: map[string]string{"error": msg},
 		Meta: Meta{
 			Message: "Error",

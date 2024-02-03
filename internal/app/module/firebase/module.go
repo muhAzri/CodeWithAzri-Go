@@ -3,6 +3,7 @@ package firebaseModule
 import (
 	"context"
 	"log"
+	"os"
 
 	firebase "firebase.google.com/go"
 	"google.golang.org/api/option"
@@ -16,7 +17,7 @@ type Module struct {
 // NewModule creates a new Firebase Module instance.
 func NewModule() *Module {
 	ctx := context.Background()
-	credentialPath := "firebase-credentials.json"
+	credentialPath := os.Getenv("FIREBASE_CREDENTIAL_PATH")
 	opt := option.WithCredentialsFile(credentialPath)
 
 	app, err := firebase.NewApp(ctx, nil, opt)
