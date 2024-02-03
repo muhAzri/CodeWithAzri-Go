@@ -471,23 +471,44 @@ func TestRepository_ReadMany(t *testing.T) {
 	db, mock, repo := initializeMockDB(t)
 	defer db.Close()
 
-	courseEntity := MockArrayEntity
+	courseArray := MockArrayEntity
 
-	// Mocking the database query
+	rows := sqlmock.NewRows([]string{
+		"course_id", "name", "description", "language", "created_at", "updated_at",
+		"tag_id", "tag_name", "tag_created_at", "tag_updated_at",
+		"gallery_id", "gallery_url", "gallery_course_id", "gallery_created_at", "gallery_updated_at",
+	})
+
+	for _, courseEntity := range courseArray {
+		for _, tag := range courseEntity.CourseTags {
+			rows.AddRow(
+				courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language, 121212, 121212,
+				tag.ID, tag.Name, 121212, 121212,
+				uuid.Nil, "", uuid.Nil, 0, 0,
+			)
+		}
+
+		for _, gallery := range courseEntity.Gallery {
+			rows.AddRow(
+				courseEntity.ID, courseEntity.Name, courseEntity.Description, courseEntity.Language, 121212, 121212,
+				uuid.Nil, "", 0, 0,
+				gallery.ID, gallery.URL, gallery.CourseID, 121212, 121212,
+			)
+		}
+
+	}
+
 	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LIMIT $1 OFFSET $2").
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
-		WillReturnRows(prepareManyRows(courseEntity))
+		WillReturnRows(rows)
 
-	// Calling the ReadOne method
 	result, err := repo.ReadMany(10, 0)
 	if err != nil {
 		t.Fatalf("Error while calling ReadOne: %v", err)
 	}
 
-	// Asserting the result
-	assert.Equal(t, courseEntity, result)
+	assert.Equal(t, courseArray, result)
 
-	// Checking if all expectations were met
 	err = mock.ExpectationsWereMet()
 	if err != nil {
 		t.Fatalf("Expectations not met: %v", err)
@@ -543,21 +564,15 @@ func TestRepository_ReadMany_WithDuplicate(t *testing.T) {
 		"d7899f00-3314-487f-a284-75c3916f5605", "https://www.google.com", courseEntity[1].ID, 121212, 121212,
 	)
 
-	// Mocking the database query
 	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LIMIT $1 OFFSET $2").
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
-	// Calling the ReadOne method
 	_, err := repo.ReadMany(10, 0)
 	if err != nil {
 		t.Fatalf("Error while calling ReadOne: %v", err)
 	}
 
-	// Asserting the result
-	// assert.Equal(t, courseEntity, result)
-
-	// Checking if all expectations were met
 	err = mock.ExpectationsWereMet()
 	if err != nil {
 		t.Fatalf("Expectations not met: %v", err)
@@ -633,6 +648,12 @@ func TestRepository_Update(t *testing.T) {
 
 	//Test Update Delete Tags Link Error
 	testUpdateDeleteTagsFailure(t, mock, repo, courseEntity)
+
+	//Test Update Link Tags Error
+	testUpdateCourseTagsLinkFailure(t, mock, repo, courseEntity)
+
+	//Test Update Insert Gallery Error
+	testUpdateCourseInsertGallery(t, mock, repo, courseEntity)
 }
 
 func testUpdateSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
@@ -760,6 +781,74 @@ func testUpdateDeleteTagsFailure(t *testing.T, mock sqlmock.Sqlmock, repo reposi
 		DELETE FROM course_tags_courses
 		WHERE course_id = $1
 	`).WithArgs(sqlmock.AnyArg()).WillReturnError(errors.New("some error"))
+
+	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testUpdateCourseTagsLinkFailure(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec(`
+		DELETE FROM course_tags_courses
+		WHERE course_id = $1
+	`).WithArgs(sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec(`INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testUpdateCourseInsertGallery(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+
+	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec(`
+		DELETE FROM course_tags_courses
+		WHERE course_id = $1
+	`).WithArgs(sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec(`
+		INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)
+		`).WithArgs(courseEntity.ID, tag.ID).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	mock.ExpectExec(`
+			INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET url = $3, updated_at = $5
+		`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnError(fmt.Errorf("some error"))
 
 	err := repo.Update(courseEntity.ID, courseEntity)
 
