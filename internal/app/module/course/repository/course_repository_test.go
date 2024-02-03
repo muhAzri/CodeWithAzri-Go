@@ -493,3 +493,56 @@ func TestRepository_ReadMany(t *testing.T) {
 		t.Fatalf("Expectations not met: %v", err)
 	}
 }
+
+func TestRepository_Error(t *testing.T) {
+	db, mock, repo := initializeMockDB(t)
+	defer db.Close()
+
+	// Mocking the database query error
+	testReadManyErrorQeury(t, mock, repo)
+
+	// Mocking the database scan error
+	testReadManyScanError(t, mock, repo)
+}
+
+func testReadManyErrorQeury(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository) {
+	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LIMIT $1 OFFSET $2").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnError(fmt.Errorf("Querry Error"))
+
+	_, err := repo.ReadMany(10, 0)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Querry Error")
+
+	err = mock.ExpectationsWereMet()
+	if err != nil {
+		t.Fatalf("Expectations not met: %v", err)
+	}
+}
+
+func testReadManyScanError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository) {
+	rows := sqlmock.NewRows([]string{
+		"course_id", "name", "description", "language", "created_at", "updated_at",
+		"tag_id", "tag_name", "tag_created_at", "tag_updated_at",
+		"gallery_id", "gallery_url", "gallery_course_id", "gallery_created_at", "gallery_updated_at",
+	}).AddRow(
+		"18a95d2f-a941-4a64-bbe5-256be7626db2", "mock Name", "mock desc", "en", 121212, 121212,
+		"invalid id", "", 121212, 121212,
+		uuid.Nil, "", uuid.Nil, 0, 0,
+	)
+
+	mock.ExpectQuery("SELECT c.id AS course_id, c.name, c.description, c.language, c.created_at, c.updated_at, t.id AS tag_id, t.name AS tag_name, t.created_at, t.updated_at, g.id AS gallery_id, g.url AS gallery_url, g.course_id AS gallery_course_id, g.created_at, g.updated_at FROM courses c LEFT JOIN course_tags_courses tc ON c.id = tc.course_id LEFT JOIN course_tags t ON tc.course_tags_id = t.id LEFT JOIN course_galleries g ON c.id = g.course_id LIMIT $1 OFFSET $2").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnRows(rows)
+
+	_, err := repo.ReadMany(10, 0)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Scan error")
+
+	err = mock.ExpectationsWereMet()
+	if err != nil {
+		t.Fatalf("Expectations not met: %v", err)
+	}
+
+}
