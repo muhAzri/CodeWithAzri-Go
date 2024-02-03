@@ -65,6 +65,7 @@ func (h *Handler) GetCourseDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetPaginatedCourses godoc
+//
 //	@Summary		Get paginated list of courses
 //	@Tags			Course
 //	@Description	Retrieve a paginated list of courses based on the specified page and limit parameters.
