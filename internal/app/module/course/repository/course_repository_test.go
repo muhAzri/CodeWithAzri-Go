@@ -544,5 +544,90 @@ func testReadManyScanError(t *testing.T, mock sqlmock.Sqlmock, repo repository.C
 	if err != nil {
 		t.Fatalf("Expectations not met: %v", err)
 	}
+}
+
+func TestRepository_Update(t *testing.T) {
+	db, mock, repo := initializeMockDB(t)
+	defer db.Close()
+
+	courseEntity := MockEntity
+
+	mock.ExpectBegin()
+
+	// Expect the course details update query
+	mock.ExpectExec(`UPDATE courses SET name = $1, description = $2 , language = $3, updated_at = $4 WHERE id = $5`).WithArgs(
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+		sqlmock.AnyArg(),
+	).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Expect the deletion of existing tags query
+	mock.ExpectExec(`
+		DELETE FROM course_tags_courses
+		WHERE course_id = $1
+	`).WithArgs(sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Expect linking course to tags queries
+	for _, tag := range courseEntity.CourseTags {
+		mock.ExpectExec(`
+		INSERT INTO course_tags_courses (course_id, course_tags_id) VALUES ($1, $2)
+		`).WithArgs(courseEntity.ID, tag.ID).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	// Expect gallery update/insert queries
+	for _, galleryItem := range courseEntity.Gallery {
+		mock.ExpectExec(`
+			INSERT INTO course_galleries (id, course_id, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET url = $3, updated_at = $5
+		`).WithArgs(
+			galleryItem.ID,
+			courseEntity.ID,
+			galleryItem.URL,
+			galleryItem.CreatedAt,
+			galleryItem.UpdatedAt,
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
+	// Expect section update/insert queries
+	for _, section := range courseEntity.Sections {
+		mock.ExpectExec(`
+			INSERT INTO course_sections (id, course_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $3, updated_at = $5
+		`).WithArgs(
+			section.ID,
+			courseEntity.ID,
+			section.Name,
+			section.CreatedAt,
+			section.UpdatedAt,
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		// Expect lesson update/insert queries within each section
+		for _, lesson := range section.Lessons {
+			mock.ExpectExec(`
+			INSERT INTO course_lessons (id, course_id, course_section_id, title, video_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET title = $4, video_url = $5, updated_at = $7
+			`).WithArgs(
+				lesson.ID,
+				courseEntity.ID,
+				section.ID,
+				lesson.Title,
+				lesson.VideoURL,
+				lesson.CreatedAt,
+				lesson.UpdatedAt,
+			).WillReturnResult(sqlmock.NewResult(0, 1))
+		}
+	}
+
+	mock.ExpectCommit()
+
+	// Call the method you are testing
+	err := repo.Update(courseEntity.ID, courseEntity)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Check if all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Unfulfilled expectations: %s", err)
+	}
 
 }
