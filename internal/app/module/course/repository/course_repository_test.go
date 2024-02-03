@@ -540,7 +540,7 @@ func TestRepository_ReadMany_WithDuplicate(t *testing.T) {
 		},
 		{
 			ID:          uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
-			Name:        "Mock Course 2 ",
+			Name:        "Mock Course 2",
 			Description: "Mock Course Description 2",
 			Language:    "id",
 			CourseTags:  mockTags,
@@ -1057,6 +1057,183 @@ func testUpdateCourseCommitError(t *testing.T, mock sqlmock.Sqlmock, repo reposi
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("some error"))
 
 	err := repo.Update(courseEntity.ID, courseEntity)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRepository_Delete(t *testing.T) {
+	db, mock, repo := initializeMockDB(t)
+	defer db.Close()
+
+	courseEntity := MockEntity
+
+	//Test Success Delete
+	testCourseDeleteSuccess(t, mock, repo, courseEntity)
+
+	//Test Delete Error Begin Transaction
+	testCourseDeleteBeginError(t, mock, repo, courseEntity)
+
+	//Test Course Tag Delete Error
+	testCourseTagDeleteError(t, mock, repo, courseEntity)
+
+	//Test Course Review Delete Error
+	testCourseDeleteReviewCourseError(t, mock, repo, courseEntity)
+
+	//Test Course Gallery Delete Error
+	testCourseDeleteGalleryCourseErrors(t, mock, repo, courseEntity)
+
+	//Test Course Lesson Delete Error
+	testCourseDeleteLessonErrors(t, mock, repo, courseEntity)
+
+	//Test Course Section Delete Error
+	testCourseDeleteSectionErrors(t, mock, repo, courseEntity)
+
+	//Test Delete Course Errors
+	testDeleteCourseErrors(t, mock, repo, courseEntity)
+
+	//Test Delete Course Commit Error
+	testDeleteCourseCommitErrors(t, mock, repo, courseEntity)
+}
+
+func testCourseDeleteSuccess(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	// Mock database expectations for the Delete operation
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM course_tags_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_reviews_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_galleries WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_lessons WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_sections WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM courses WHERE id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	// Call the Delete method with the test entity ID
+	err := repo.Delete(courseEntity.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify that all expected calls were made
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("mock expectations were not met: %v", err)
+	}
+}
+
+func testCourseDeleteBeginError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("some error"))
+
+	// Call the Delete method with the test entity ID
+	err := repo.Delete(courseEntity.ID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCourseTagDeleteError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM course_tags_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Delete(courseEntity.ID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCourseDeleteReviewCourseError(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM course_tags_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_reviews_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Delete(courseEntity.ID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCourseDeleteGalleryCourseErrors(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM course_tags_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_reviews_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_galleries WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Delete(courseEntity.ID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCourseDeleteLessonErrors(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM course_tags_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_reviews_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_galleries WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_lessons WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Delete(courseEntity.ID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCourseDeleteSectionErrors(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM course_tags_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_reviews_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_galleries WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_lessons WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_sections WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnError(fmt.Errorf("some error"))
+	// mock.ExpectExec(`DELETE FROM courses WHERE id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	// mock.ExpectCommit()
+
+	err := repo.Delete(courseEntity.ID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testDeleteCourseErrors(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM course_tags_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_reviews_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_galleries WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_lessons WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_sections WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM courses WHERE id = $1`).WithArgs(courseEntity.ID).WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Delete(courseEntity.ID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "some error")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testDeleteCourseCommitErrors(t *testing.T, mock sqlmock.Sqlmock, repo repository.CourseRepository, courseEntity entity.Course) {
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM course_tags_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_reviews_courses WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_galleries WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_lessons WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM course_sections WHERE course_id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`DELETE FROM courses WHERE id = $1`).WithArgs(courseEntity.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit().WillReturnError(fmt.Errorf("some error"))
+
+	err := repo.Delete(courseEntity.ID)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "some error")

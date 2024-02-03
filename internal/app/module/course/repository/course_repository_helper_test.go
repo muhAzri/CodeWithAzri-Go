@@ -119,7 +119,7 @@ var MockArrayEntity []entity.Course = []entity.Course{
 	},
 	{
 		ID:          uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
-		Name:        "Mock Course 2 ",
+		Name:        "Mock Course 2",
 		Description: "Mock Course Description 2",
 		Language:    "id",
 		CourseTags:  mockTags,
