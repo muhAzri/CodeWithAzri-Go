@@ -6,3 +6,4 @@
 run-dev.sh
 run-staging.sh
 run-prod.sh
+admin-generator.exe
