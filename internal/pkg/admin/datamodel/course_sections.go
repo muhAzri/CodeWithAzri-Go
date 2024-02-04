@@ -39,7 +39,7 @@ func GetCourseSectionsTable(ctx *context.Context) table.Table {
 		Field:     "course_id",
 		JoinField: "id",
 	}).
-	FieldFilterable(types.FilterType{Operator: types.FilterOperatorLike}).FieldSortable()
+		FieldFilterable(types.FilterType{Operator: types.FilterOperatorLike}).FieldSortable()
 	info.AddField("Name", "name", db.Varchar)
 	info.AddField("CreatedAt", "created_at", db.Int)
 	info.AddField("UpdatedAt", "updated_at", db.Int)

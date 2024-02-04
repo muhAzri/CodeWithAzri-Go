@@ -23,13 +23,11 @@ import "github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
 // example end
 var Generators = map[string]table.Generator{
 
-	"courses": GetCoursesTable,
-	// "course_reviews_courses": GetCourseReviewsCoursesTable,
-	// "course_reviews":         GetCourseReviewsTable,
+	"courses":             GetCoursesTable,
 	"course_tags_courses": GetCourseTagsCoursesTable,
 	"course_tags":         GetCourseTagsTable,
 	"course_sections":     GetCourseSectionsTable,
-	// "course_galleries":       GetCourseGalleriesTable,
+	"course_galleries":    GetCourseGalleriesTable,
 	// "course_lessons":         GetCourseLessonsTable,
 	// "users":                  GetUsersTable,
 
