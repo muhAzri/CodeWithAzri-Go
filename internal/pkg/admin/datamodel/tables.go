@@ -9,7 +9,7 @@ var Generators = map[string]table.Generator{
 	"course_tags":         GetCourseTagsTable,
 	"course_sections":     GetCourseSectionsTable,
 	"course_galleries":    GetCourseGalleriesTable,
-	// "course_lessons":         GetCourseLessonsTable,
+	"course_lessons":         GetCourseLessonsTable,
 
 	// generators end
 }

@@ -64,7 +64,3 @@ func GetCourseSectionsTable(ctx *context.Context) table.Table {
 
 	return courseSections
 }
-
-// formList.AddField("Course", "course_id", db.UUID, form.SelectSingle).FieldOptionsFromTable("courses", "name", "id", func(sql *db.SQL) *db.SQL {
-// 	return sql.Where("name", "LIKE", "%%Test%")
-// })
