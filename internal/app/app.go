@@ -4,6 +4,7 @@ import (
 	"CodeWithAzri/internal/app/module/course"
 	firebaseModule "CodeWithAzri/internal/app/module/firebase"
 	"CodeWithAzri/internal/app/module/user"
+	"CodeWithAzri/internal/pkg/admin"
 	"CodeWithAzri/internal/pkg/constant"
 	"CodeWithAzri/internal/pkg/middleware"
 	"CodeWithAzri/internal/pkg/router"
@@ -78,6 +79,11 @@ func (a *App) initModuleRouters() {
 	a.Router.Mux.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
 	))
+
+	a.Router.Mux.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/info/course_lessons", http.StatusMovedPermanently)
+	})
+	admin.InitializeAdmin(a.Router.Mux)
 
 }
 
