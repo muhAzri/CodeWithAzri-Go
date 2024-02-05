@@ -5,6 +5,7 @@ import (
 	"github.com/GoAdminGroup/go-admin/modules/db"
 	"github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
 	"github.com/GoAdminGroup/go-admin/template/types"
+	"github.com/GoAdminGroup/go-admin/template/types/form"
 )
 
 func GetCourseTagsCoursesTable(ctx *context.Context) table.Table {
@@ -46,6 +47,8 @@ func GetCourseTagsCoursesTable(ctx *context.Context) table.Table {
 
 	formList := courseTagsCourses.GetForm()
 
+	formList.AddField("Course", "course_id", db.UUID, form.SelectSingle).FieldOptionsFromTable("courses", "name", "id")
+	formList.AddField("Course", "course_tags_id", db.UUID, form.SelectSingle).FieldOptionsFromTable("course_tags", "name", "id")
 	formList.SetTable("course_tags_courses").SetTitle("CourseTagsCourses").SetDescription("CourseTagsCourses")
 
 	return courseTagsCourses
