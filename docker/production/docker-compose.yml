@@ -1,0 +1,15 @@
+version: '1.0'
+
+services:
+  code-with-azri-production:
+    image: code-with-azri-production
+    build:
+      context: ../../
+      dockerfile: docker/production/Dockerfile
+    ports:
+      - "8080:8080"
+
+
+
+
+ 
