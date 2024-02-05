@@ -8,6 +8,7 @@ import (
 	"CodeWithAzri/internal/pkg/constant"
 	"CodeWithAzri/internal/pkg/middleware"
 	"CodeWithAzri/internal/pkg/router"
+	"CodeWithAzri/internal/pkg/sentry_utils"
 	"CodeWithAzri/pkg/sqlPkg"
 	"database/sql"
 	"log"
@@ -68,11 +69,11 @@ func (a *App) initMiddlewares() {
 }
 
 func (a *App) initModuleRouters() {
-	// http.Handle("/swagger/", http.StripPrefix("/swagger/", httpSwagger.Handler(
-	// 	httpSwagger.URL("/swagger/doc.json"),
-	// )))
 
 	m := a.Middlewares[0].(*middleware.FirebaseMiddleware)
+	sentryHandler, _ := sentry_utils.Init()
+
+	a.Router.Mux.Use(sentryHandler.Handle)
 
 	router.RegisterUserRoutes(a.Router, constant.V1, a.UserModule, m)
 	router.RegisterCourseRoutes(a.Router, constant.V1, a.CourseModule, m)

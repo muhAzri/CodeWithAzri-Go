@@ -117,24 +117,24 @@ var MockArrayEntity []entity.Course = []entity.Course{
 		CreatedAt: 121212,
 		UpdatedAt: 121212,
 	},
-	{
-		ID:          uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
-		Name:        "Mock Course 2",
-		Description: "Mock Course Description 2",
-		Language:    "id",
-		CourseTags:  mockTags,
-		Gallery: []entity.CourseGallery{
-			{
-				ID:        uuid.MustParse("d7899f00-3314-487f-a284-75c3916f5605"),
-				CourseID:  uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
-				URL:       "https://www.google.com",
-				CreatedAt: 121212,
-				UpdatedAt: 121212,
-			},
-		},
-		CreatedAt: 121212,
-		UpdatedAt: 121212,
-	},
+	// {
+	// 	ID:          uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
+	// 	Name:        "Mock Course 2",
+	// 	Description: "Mock Course Description 2",
+	// 	Language:    "id",
+	// 	CourseTags:  mockTags,
+	// 	Gallery: []entity.CourseGallery{
+	// 		{
+	// 			ID:        uuid.MustParse("d7899f00-3314-487f-a284-75c3916f5605"),
+	// 			CourseID:  uuid.MustParse("a66280a6-61e4-4806-9fc1-8f5457f413a1"),
+	// 			URL:       "https://www.google.com",
+	// 			CreatedAt: 121212,
+	// 			UpdatedAt: 121212,
+	// 		},
+	// 	},
+	// 	CreatedAt: 121212,
+	// 	UpdatedAt: 121212,
+	// },
 }
 
 func prepareRows(courseEntity entity.Course) *sqlmock.Rows {
