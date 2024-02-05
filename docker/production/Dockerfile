@@ -8,9 +8,10 @@ WORKDIR /app
 
 COPY ./go.mod ./go.sum ./
 
-COPY ./config/${ENV_FILE} ./.env
+COPY ./config/prod.env ./.env
 
-COPY ./${FIREBASE_PATH} ./firebase-credentials.json
+//TODO :ADD CORRECT FIREBASE CREDENTIALS
+COPY ./code-with-azri-firebase-adminsdk-vf6lc-bd1eeda135.json ./firebase-credentials.json
 
 RUN go mod download
 

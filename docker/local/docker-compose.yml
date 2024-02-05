@@ -12,13 +12,11 @@ services:
     networks:
       - local_network
 
-  CWADev:
-    image: code-with-azri-dev
+  code-with-azri-local:
+    image: code-with-azri-local
     build:
-      context: .
-      args:
-        - ENV_FILE=dev.env
-        - FIREBASE_PATH=code-with-azri-firebase-adminsdk-vf6lc-bd1eeda135.json
+      context: ../../
+      dockerfile: docker/local/Dockerfile
     ports:
       - "8080:8080"
     networks:
